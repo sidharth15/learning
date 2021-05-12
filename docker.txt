@@ -1,0 +1,30 @@
+# docker list images
+docker images
+
+# run container
+docker run -it busybox sh
+
+=> -d flag will detach the container from the terminal so it can run independently
+=> -it flag attaches us to a bash terminal inside the container
+
+# list containers
+docker ps -a 
+
+# remove containers
+docker rm 398473948 4987498 (list of container ids)
+OR 
+docker rm $(docker ps -a -q -f status=exited)
+
+# prune command
+docker container prune
+
+# copying docker images to another machine##
+#save docker images as tar
+docker save -o <path for generated tar file> <image name>
+e.g. docker save -o c:/myfile.tar centos:16
+
+# load docker image to destination docker daemon
+docker load -i <path to image tar file>	
+
+# get a bash command line in a running container
+docker exec -it <container name> /bin/bash 

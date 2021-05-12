@@ -1,0 +1,2 @@
+- why is there a difference in cost between cost explorer and cost metric ?
+- why is there high lambda costs during regression testing ?

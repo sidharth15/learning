@@ -1,0 +1,4 @@
+VPC:
+ Public subnets will have a route to the internet gateway in its route table.
+ In PCP infra, the 'ZONE1', 'ZONE2' and 'ZONE3' naming is really a way to classify the subnets as private or public.
+ 'ZONE1' - is a public subnet. The rest two are private subnets.

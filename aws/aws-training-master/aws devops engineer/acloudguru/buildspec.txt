@@ -1,0 +1,89 @@
+important points regarding buildspec file
+
+- By default CodeBuild expects a file named buildspec.yml at the root of the source.
+- We can however change this to a name and location as desired.
+- There are three ways of doing this :
+	1. Using aws cli - create project or update-project command : setting buildspec value to the path we choose.
+	2. Using aws cli - start-build command & we set the buildspecOverride value to the path where we have our file.
+	3. Using CloudFormation - set the BuildSpec property of Source in a resource of type AWS::CodeBuild::Project.
+
+Template ofa  buildspec file :-
+
+version: 0.2
+
+run-as: Linux-user-name
+
+env:
+  variables:
+    key: "value"
+    key: "value"
+  parameter-store:
+    key: "value"
+    key: "value"
+  git-credential-helper: yes
+
+proxy:
+    upload-artifacts: yes
+    logs: yes
+            
+phases:
+  install:
+    run-as: Linux-user-name
+    runtime-versions:
+      runtime: version
+      runtime: version
+    commands:
+      - command
+      - command
+    finally:
+      - command
+      - command
+  pre_build:
+    run-as: Linux-user-name
+    commands:
+      - command
+      - command
+    finally:
+      - command
+      - command
+  build:
+    run-as: Linux-user-name
+    commands:
+      - command
+      - command
+    finally:
+      - command
+      - command
+  post_build:
+    run-as: Linux-user-name
+    commands:
+      - command
+      - command
+    finally:
+      - command
+      - command
+artifacts:
+  files:
+    - location
+    - location
+  name: artifact-name
+  discard-paths: yes
+  base-directory: location
+  secondary-artifacts:
+    artifactIdentifier:
+      files:
+        - location
+        - location
+      name: secondary-artifact-name
+      discard-paths: yes
+      base-directory: location
+    artifactIdentifier:
+      files:
+        - location
+        - location
+      discard-paths: yes
+      base-directory: location
+cache:
+  paths:
+    - path
+    - path

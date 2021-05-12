@@ -1,0 +1,1662 @@
+AWS Devops Engineer Professional 
+
+
+
+AWS CodeStar
+
+ - basically a service where everything from CodeCommit to CodeDeploy can be viewed under a single console.
+
+ - it integrates CodeCommit, CodeBuild, CodePipeline & CodeDeploy.
+
+
+
+1) Create a new project
+
+2) Select template for the new project (Python on Lambda, Java Spring on EC2 etc.)
+
+3) Review configurations.
+
+4) After project is created, CodeStar dashboard will show Application Endpoints.
+
+
+
+Under project tab on the left, we can see all the project resources created by the project.
+
+
+
+AWS CodeCommit 
+
+- Onum parayanilla.
+
+
+
+AWS CodeBuild 
+ 
+ - used for performing builds and storing artifacts based on a build script we provide 
+		(either direct commands or preferably, through buildspec.yml - yaml file)
+
+ - covers compiling, unit testing & packaging (zipping)
+
+	
+Source -> location of the source code. 
+			could be codecommit, S3 bucket etc.
+	where to store artifacts, whether to zip it (type of packaging)
+	
+
+other options are :
+timeout to give while running the build.
+
+	
+	Compute type : amount of RAM & CPU to be allocated.
+	
+Environment variables to be used : 
+	
+
+The build logs are also available in CloudWatch under /aws/CodeBuild/${project-name}
+
+
+
+NOTE : In case the compiler for the build is not available by default in CodeBuild itself,
+ we can give Runtime as Build
+ & install the compiler via the buildspec.yml commands.
+
+
+
+CodeDeploy -
+ 
+
+- The build completed and stored in S3 needs to be installed into the various EC2 instances.
+ 
+  This could be achieved by running some custom scripts in the ec2 instances which pulls the artifacts from S3.
+
+   But thats not good for some reason.
+
+So, we use CodeDeploy to do the deployment.
+
+
+Important components :
+
+1. appspec.yml : 
+	Similar to build-spec.yml in CodeBuild. Used to provide commands and configurations on how to install
+
+		  artifacts in the target servers.
+
+
+	- we can mention commands to be executed beforeInstall & afterInstall.
+
+	- we can also mention as which user the particular commands are to be executed.
+
+	- afterInstall commands might include commands to give necessary permissions to the installed builds, execute artifacts,
+	 set log file for the execution etc.
+	
+	
+
+
+
+Configuring a new deployment :
+
+
+		Deployments are configured in a deployment group.
+
+
+	Three steps to be followed to setup CodeDeploy are :
+
+	1) Create an IAM role for the deployment group. :
+
+							  need to have a role with CodeDeploy policy 
+
+							  and S3 read-only policies attached.
+
+	2) Install CodeDeploy Agent on the target ec2 instances.:
+ 
+							for doing this, we setup the ec2 instance with certain stuff like:
+
+							(i)   installing ruby
+
+							(ii)  installing wget
+
+							(iii) installing 'install' - running this will install CodeDeploy agent.
+
+	3) Configure CodeDeploy application :
+ 
+					- configure application name, compute platform (ec2, lambda, ecs).
+
+					- for the application, create deployment group and assign a role for the group.
+
+					- deployment type : in-place OR blue/green
+
+					- environment configuration : the ec2 instances, autoscaling groups or on-premises
+
+					  instances to which the application is to be deployed is configured here.
+
+					  Configured using tag groups : give tags and their values. for eg : name : "instance-name"
+
+						Single tag group : any instance identified by the tag group will be deployed to.
+
+						Multiple tag groups : only instances identified by all the tag groups will be deployed to.
+
+
+					After deployment group is configured, we create a new deployment by configuring the location (s3 bucket) from 
+					where to load the appspec.yml is zipped and kept.[it need not necessarily be zipped, but in our example its zipped and kept.]
+
+
+
+CodePipeline :
+	- used for integrating CodeCommit, CodeBuild and CodeDeploy services, so that as soon a commit is done by a user, it is immediately built &
+	  the artifacts are immediately deployed to the instances.
+
+	- we can disable the transitions between different stages of the CodePipeline. Also, we can insert a manual approval stage in between two stages.
+
+CodeDeploy configurations supported :
+	1) OneAtATime - considered successful if deployment completes for all instances. Even if it fails for the last instance, its still considered successful.
+			considered failed if deployment fails for any instance but the last instance (it doesn't matter if it fails for last instance)
+
+	2) HalfAtATime - considered successful if half or more instances.
+			 if there are 9 instances, it deploys 4 at a time. & is considered successful if 5 or more instances are successfully deployed.
+
+	3) AllAtOnce - considered successful if deployment succeeds for atleast one instance.
+
+In case of ECS deployments, there is only AllAtOnce supported.
+In case of Lambda deployments, there are :
+	- Canary : Traffic is shifted in two increments.
+	- Linear : Traffic is shifted in equal increments.
+	- All-At-Once : All traffic is shifted all at once.
+
+
+Elastic Beanstalk :
+ - used for automating setting up of webapps.
+ - we just select a platform and the code, ElasticBeanstalk will handle the complete deployment and setup of the instances.
+	[the code can either be uploaded in a zip file or the s3 location of the code can be supplied. ]
+ - we can do some additional configuration like : 
+			type and number of instances, 
+			amount of memory allocated to PHP,
+			whether to stream logs to CloudWatch.
+
+EB-extensions - 
+ - how to provide info to ElasticBeanstalk about the dependencies that our application will be having ?
+ - for this we use ebextensions, which are based on YAML format.
+
+ - Elastic Beanstalk provides the following approaches to customize and configure the application being deployed :
+	- packages : dependency packages to be installed can be specified here.
+	- groups   : we can create users and user groups here - so that certain actions are to done by a particular user.
+	- users 
+	- sources  : allows to download a file from a remote location. 
+	- files	  
+	- commands : for running certain commands.
+	- services 
+	- container commands
+
+ - Each of the above can be created in a separate file inside the .ebextensions folder.
+ - they are executed by EB in alphabetical order.
+ - when creating groups & adding a user to a group, it can be done in the following manner :
+
+	groups:
+	  groupOne : {}
+	users :
+	  myuser : 
+	    groups
+	      - groupOne
+
+ - sources - just give the remote location where the file to be downloaded is present.
+
+   sources:
+	/root : https://s3-us-west-2.amazonaws.com/bucketname/filename.zip
+
+  Once the file is downloaded, EB will automatically extract the contents of the file.
+
+ - files : basically allow us to create a file and set its content & properties.
+	for eg:
+
+	files:
+	  "/usr/share/nginx/html/test.html" :
+	  mode:"000755"
+	  owner : root
+	  group : root
+	  content : |
+		file content here
+
+ - commands = allow us to define some commands to be run.
+	commands:
+	  nginx_restart:
+	    command: "service nginx restart"
+
+ - services : used to specify the service to be running.
+	for eg-
+		services:
+		  sysvinit:
+		    nginx:
+			enabled:"true"
+
+
+Difference between commands and container commands
+
+ - One of the goals of using container commands is that, we can specify container commands as "leader_only:true".
+	Giving the leader_only : true means that the command will be executed in only ONE of the target instances.
+	Use cases such as creation of databases, running DB migration scripts etc.
+
+ - The actual difference between commands and container commands is that : // IMPORTANT
+	--> Commands are run before the application and web server are setup and application version file is extracted.
+	--> container_commands are run after the application server and web server have been setup but before the application version file is deployed.
+
+EXAM PERSPECTIVE : where commands and container_commands are used,
+		   why leader_only attribute is used.
+
+Elastic Beanstalk Monitoring and health checks :
+	 - We can view monitoring and health check metrics for the EB env in its own console.
+	 - We can get metrics on 2xx, 3xx, 4xx, 5xx responses. EB gets these metrics from CloudWatch (Load balancer logs)
+	 - EB does not just monitor the instances. They monitor the application within.
+	 - Thera are two types of health checks in EB - 
+		- Basic Health Reporting : provides info about the health of the instances in EB environment (i.e launched by EB).
+			   		   this info is derived from either ELB health checks in load balanced environments or EC2 health checks in case of single instance based environments.
+		- Enhanced Health Reporting
+
+
+	Even if the instance is up and running fine, the instance health is shown as OK, but if the application is actually down inside the instance, its pointless.
+	EB health check will show the health check failing for the application. This is achieved as follows :
+
+   ---> ElasticBeanstalk has a daemon for health checks - called healhd (login to instance and do grep health on ps -aux)
+	This service is basically what gives EB the info about the application health status.
+	So if we stop the web server, for eg http (service http stop) - the instance health check will still be shown as OK, but EB will show that the application is 
+	down.
+	EB will also show the causes, which in above case is : "Following services are not running : proxy"
+		- in this case, the webserver httpd is acting as proxy between the application and the internet.
+
+	- Also, EB makes use of autoscaling groups while deploying the application for the instance(s).
+	So, if the instances are dropped (or fail their health checks according to the asg activity history), it will automatically spin up a new instance.
+
+
+EB CLI
+	- installing the EB CLI
+		-> install the eb cli using pip command : pip install awsebcli --upgrade --user
+	
+	- to create an eb application using eb cli, use the eb init command
+		- eb init
+		- select region 
+		- provide aws credentials
+		- enter application name
+		- EB automatically detects the file types present in the directory and asks the platform on which the application is based. Eg. php
+		- select platform version
+		- choose if ssh should be setup for the instances
+	
+	after these steps, the application configs are ready. Inside the .elasticbeanstalk folder created, a config.yml file is created which has the configurations
+	given by us in the above steps.
+
+	- Next we create and deploy the application using eb create.
+		- eb create
+		- Enter environment name
+		- Enter DNS CNAME prefix
+		- select load balancer type (classic/application/network)
+		(If we don't need load balancer in our design, run the eb create command with a --single flag.)
+
+		In single instance environment without a load balancer, the environment name and DNS CName prefix is all we need to provide.
+		Then the deployment is started. 
+			--> The code is uploaded to S3
+			--> the bucket elasticbeanstalk-.* is used for environment data storage.
+			--> security groups is created
+			--> EIP is created.	
+			--> Once instances are launched, the DNS of the endpoint instance is shown.
+
+	- to display the health checks and metrics of the environment, use command :- eb health .
+	- to check the status of eb environment, use command :- eb status
+	- to terminate the environment, use command :- eb terminate 
+
+==========================================================================================================================================================================
+Elastic Beanstalk Deployment policies  -  	[REFER COMPARISON OF DEPLOYMENT POLICIES SCREENSHOTS]
+
+-> Deployment policies support will depend on whether we are launching a single instance environment OR a load balancer based environment.
+	- All at once : 
+	  Will deploy all the new application-version to all the instances at once.
+	
+	- Rolling : 
+	  EB will divide the entire environment into batches and deploy the application to one batch at a time, leaving the rest of the instances in the environment
+	  running the older version of the application.
+
+	  --> During a rolling deployment, some of the instances will server requests with the old version and some instances will server requests with the new version.
+	  --> Also, during a rolling deployment, the overall instance capacity of the environment gets reduced.
+
+	- Rolling with additional batch : 
+	  In this policy, an additional batch of instances are spun up by EB. So that the capacity of the environments is not reduced.
+	  But just like in the case of Rolling deployment, both new & old versions of the application will be serving requests.
+
+	- Immutable
+	  performs an immutable update to launch a full set of new instances running the new version of the application in separate Auto Scaling group, alongside the
+	  instances running the old version.
+	  If the new instances don't pass the health checks, they are terminated, leaving the original instances untouched.
+
+	- Blue and green
+	  In this method, we change/swap the routing from a blue environment (production env) to a green environment (environment with new version).
+	  Deployment = routing traffic from blue to green environment	  
+
+	  Ways to achieve blue-green deployment : 
+	
+		1. Updating DNS Routing via Route 53 (Overall switching time = TTL + Route53 propagation time (+ misbehaving clients))
+		2. Swap the Auto scaling groups behind your ELB (Switching time is 0 in this case because the DNS of the ELB remains same & only the instances behind the ELB is changing)
+		3. Swap Launch configurations (not recommended - probably because the instances will all have to spun up and directly put into the new env - just my theory)
+		4. Swap Beanstalk environments (Swap environments URLs in the EB console - here the endpoint URL remains the same & the internal DNS URLs are swapped)
+			-> so apart from the dns of the underlying instance or load balancer, I think EB has its own endpoint URL. So basically, this url will remain
+			   same and the underlying instance's OR load balancer's URL will be swapped between environments.
+		5. Clone stack with AWS OpsWorks and updating DNS
+
+	Things to remember : DNS cache time may affect the time until the new green environment is served. (since the dns lookup would return the old IP/URL)
+			     Do not make too many changes in the DB schema using the newly deployed environment because if want to move back to the old blue env,
+			     it will have to deal with the changes in schema of the DB.
+
+	Canary deployments --
+	--> we route traffic to the new environment little by little, until we are certain of the stability of the new version.
+	Eg. Weighted routing in Route 53
+
+Lambda versioning & alias -
+ - Lambda allows capability to allow one or more version of the function to be deployed.
+
+ ==> Lambda maintains the latest function code with $LATEST version.
+
+ - lambda alias : my understanding is that, with aliases we can create an arn of the lambda with the alias name appended at the end of it,
+		  so that we can use the alias to split traffic between 2 versions of the lambda.
+
+  - Create version1 of lambda
+  - Create version2 of lambda
+  - Create alias. 
+  - Choose 2 versions & weightage of traffic to split between the two versions. 
+    Now, all traffic routed to this alias will make sure that two versions of lambda get the split-traffic according to the weight we configured.
+  
+
+ To create a new version of a lambda function :
+	- Edit the code
+	- Save the code in the lambda console.
+	- click publish version.
+	- the new version is created. note that we cannot edit this newly created version. i.e its immutable.
+
+IMPORTANT !!!!
+We cannot use $LATEST for creating Split traffic. For doing so, we can create a separate version from the $LATEST and then create alias of split traffic on this
+newly created version and any other version we wish to split the traffic with.
+
+	Splitting traffic b/w $LATEST and any other version --> NOT POSSIBLE !
+	
+	Create a version from $LATEST and split this version with another --> POSSIBLE
+
+The arn of lambdas are of two types : 
+Qualified arn - appended with the alias/version. Eg : arn:aws:lambda:us-east-1:7487647578:function:HelloWorld:$LATEST
+Unqualified arn - just the arn without the alias/version.
+
+
+Lambda @ Edge - [REFER SCREENSHOT]
+
+- lambda at edge lets us run lambda functions to customize content that CloudFront delivers.
+- We can use lambda functions to change CloudFront requests and responses at following points :
+	-> Viewer request : 
+		After CloudFront receives a request from a viewer 
+		it is executed on every request before CloudFront cache is checked.
+		we can do things like :
+			- modify URLs, cookies, query strings etc.
+			- perform authentication and authorization checks : its important to put authentication and authorization checks before cache is accessed i.e
+									    at the viewer request, so that no content in the cache is actually returned without clearing
+									    authentication checks.
+									    if authentication fails, a 403 can be returned to user.
+
+	-> Origin request : 
+		Before CloudFront forwards the request to the origin
+		executed on cache miss, before a request is forwarded to the origin.
+		we can do various things at this stage :
+			- Dynamically select origin based on the request headers. 
+			  eg. based on the request headers, we can forward the request to either S3 bucket OR Ec2 instance.
+		
+	-> Origin response: 
+		After CloudFront receives the response from the origin
+		executed on cache miss, after a response is received from the origin at CloudFront
+		things we can do at this stage are :
+			- modify the response headers
+			- intercept and replace various 4XX and 5XX errors from the origin (we can return a specific error page OR give 301 redirect)
+
+	-> Viewer response: 
+		Before CloudFront forwards the response to the viewer
+		executed on all the responses received either from the origin or the cache.
+		we can do things like :
+			- modify the response headers before caching the response.
+
+Practical example of Lambda@Edge would be :
+	when the user sends a request to CloudFront, like 223kjb3k8.cloudfront.net but does not specify the full uri path to the requested object,
+	then a lambda at Edge can take care of completing the rest of the uri. (here the event type is : Origin request)
+
+Docker in ElasticBeanstalk
+ - Instead of upload code, we upload the Dockerfile.
+ - Inside the instance, if we run docker ps command, we can see that the webserver container is running on port 80.
+
+ElasticBeanstalk - Web vs Worker environment
+
+ - Web server environments in EB will directly receive and handle requests from the user.
+ - Worker environments are used to decouple any long running processes or workloads on demand or performs tasks on a schedule.
+
+
+AWS OpsWorks :
+	- it is a configuration management service that provides managed instances of Chef and Puppet.
+
+Use case : When an ec2 instance is launched, we want to install certain packages like nginx, PHP-FPM, and MySQL along with having custom SSH configuration file 
+	   followed by restart of SSH server. [REFER ATTACHED SCREENSHOT]
+
+Stack - as per my understanding, stack consists of the entire layers of the system, which covers the web layer, application layer & database layer.
+Layer - i think its like a single module that covers the a particular tier of the entire system.
+
+When creating a new stack :
+	- We can create and add layers, with a Chef recipe associated with each of these layers.
+	- We need to provide the url 
+	- We need to provide a Chef recipe, which will contain all configurations such as : any packages to update, to start nginx etc.
+	- Once we start the instance associated with the layer, the Chef agent on the instance will pull the Chef recipe and deploy the application to the instance.
+
+Alternatives to OpsWorks includes Terraform :)
+
+OpsWorks has 5 events that occur during the event lifecycle : 
+ 1. Setup
+ 2. Configure
+ 3. Deploy
+ 4. Undeploy
+ 5. Shutdown
+
+When an event occurs, it runs set of chef recipes assigned to that event.
+So according to each stage in the application setup, the assigned chef recipe is executed.
+
+For eg. we require a nodejs app server in our system.
+ for this, we may need to install nodejs on the instance. -> this can be configured in the 'setup' event.
+
+Looking in detail at each of the events, 
+	- Setup : this event occurs once the new instance has finished booting up.
+		  used for initial installation of software packages.
+		  eg. installing php and apache through layer recipes.
+
+	- Configure :   this event occurs whenever 
+			(i)   instance enters or leaves online state. 
+			(ii)  associate or disaassociate EIP of the instance, 
+			(iii) attach or detach an ELB from the layer.
+
+		eg. consider we have a db cluster of 3 instances, and we add another instance to the cluster.
+		On addition of the new instance, the 'configure' event occurs on all 3 instances.
+		So in this case, since its a db cluster, the tasks that can occur during Configure event can be : database replication across the new instance.
+
+		Another use case can be adding a new instance to a reverse proxy.
+
+	- Deploy : 
+	- Undeploy : Both are events triggered on Deploy and Undeploy commands.
+
+	- Shutdown : the event in this stage is executed when we inform OpsWorks to shut the instance down before the ec2 instances are terminated.
+	  use cases : deregister an instance before it is terminated.
+
+=======================================================================================================================================================================
+
+Create deployment commands
+ - mainly of two categories :
+	-> Deploy/Undeploy : used to deploy or undeploy a particular application from an instance/group of instances.
+	-> Stack commands : can be used to perform variety of operations on stack's instances.
+		Update custom cookbook : update instance's cookbook with current version from repo.
+		Execute recipes : executes set of recipes on the instances.
+		setup : run the instances' setup recipes.
+		configure : run the instances' configure recipes.
+		Upgrade operating system : upgrades os to the latest version.
+
+AWS Auto Healing
+ - Each instance managed by OpsWorks has an OpsWorks agent installed that communicates regularly with the service.
+	If the agent does not communicate with the OpsWorks service for approx 5 min, OpsWorks stack will consider the instance to have failed.
+	-> It will then stop the instance and start the instance.
+	
+ 2 cases to note in case of auto healing :
+	-> If the instance ebs volume has some corruption, and it fails while starting up the instance after the shutdown, start_failed error will be shown
+	 & manual intervention will be required.
+	-> Autohealing will not redo any OS upgrades done on the instance.
+
+Data bags
+ - basically like global variables, so we can use the value stored in data bags within multiple recipes.
+
+
+====================================================================================================================================================================================================
+ECR - Elastic Container Registry
+
+ -> For doing the ECR operations, we need to attach a policy of AmazonEC2ContainerRegistryFullAccess to the iam role of the ec2 instance.
+ -> We create a Dockerfile to create a simple web server based off an ubuntu 16.04 image with the following commands :
+
+	FROM ubuntu:16.04
+	
+	RUN apt-get update
+	RUN apt-get -y install apache2
+	
+	RUN echo 'Hello World' > /var/www/html/index.html
+	
+	RUN echo './etc/apache2/envvars' > /root/run_apache.sh
+	RUN echo 'mkdir -p /var/run/apache2' >> /root/run_apache.sh
+	RUN echo 'mkdir -p /var/lock/apache2' >> /root/run_apache.sh
+	RUN echo '/usr/sbin/apache2 -D FOREGROUND' >> /root/run_apache.sh
+	RUN chmod 755 /root/run_apache.sh
+
+	EXPOSE 80
+	
+	CMD /root/run_apache.sh
+	
+ -> list images command : docker images
+ -> for building a docker image from a dockerfile and then pushing it to ECR, following are the commands -
+	
+	docker build -t myapache .	[myapache -> Dockerfile name & don't forget the full stop at the end, we're implying the image to have the same name as the Dockerfile]
+
+	docker run -d -p 80:80 myapache 
+	
+	docker ps
+
+	aws ecr get-login --no-include-email --region us-east-1 [this command returns a login command (along with a password thats very long)]
+
+	docker tag myapache ECR-DNS/repo-name [ECR-DNS/repo-name -> available from ECR]
+
+	docker push tag-name:version 	[by default when we push an image it will go to docker hub, so by tagging we're setting it to be pushed to our ECR repo]
+					[here tag-name would be the ECR-DNS/repo-name -i think version is optional-]
+
+
+
+Elastic Container Service (yay!)
+
+-> basically summarised everything I know about tasks and services.
+-> services would enable the containers to be run across instances, whereas tasks would not be run on multiple instances.
+
+For short running/batch processing jobs -> prefer tasks
+For long running jobs like web servers -> prefer services
+
+The ECS agent will be running on the instances.
+
+For running a task -
+	-> create a task definition first.
+	-> we can select whether it should be ec2 based or fargate based
+	-> give task definition name, task role, task size (memory & CPU), & CONTAINER DEFINITION 
+	-> the container definition will be having the details related to which image to use, the container name, memory limits, port mappings for the container
+
+	-> then we create the cluster, where we can specify if the cluster to be created is 
+		- Networking only i.e AWS Fargate
+		- EC2 linux + Networking
+		- EC2 Window + Networking
+
+	-> we can then specify the size & type of the instances, number of instances, VPC, security groups etc.
+	-> then the cluster is created.
+
+	-> Once cluster is up and ready, we can launch a task.
+	-> On clicking run task, we can choose whether the launch type is Fargat or Ec2.
+	-> We can select number of tasks to spawn, the task definition based on which the task is to be started, task placement (i.e how to spread the tasks across
+																availability zones and instances.)
+
+To create a service :
+	-> select launch type - fargate or ec2
+	-> provide task definition 
+	-> service name
+	-> service type - replica or daemon
+	-> NUMBER OF TASKS!!
+	-> minimum healthy percent and max healthy percent	
+
+=======================================================================================================================================================================
+
+Infrastructure as a code
+
+ec2.tf
+
+resource "aws_instance" "web" {
+  ami = "ami-a398um"
+  instance_type = "t2.micro"
+  security_groups = ["${aws_security_group.allow_all.name}"]
+  tags {
+    Name = "IAAC"
+  }
+}
+
+sg.tf
+
+resource "aws_security_group" "allow_all" {
+  name = "allow_all"
+  description = "Allow all inbound traffic"
+
+  ingress {
+	from_port = 22
+	to_port = 22
+	protocol = "tcp"
+	cidr_blocks = ["128.30.50.72/32"]
+  }
+
+  egress {
+	from_port = 0
+	to_port = 65535
+	protocol = "tcp"
+	cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+providers.tf
+
+provider "aws" {
+  region = "eu-west-1"
+}
+
+to deploy using terraform, run : 
+	terraform plan
+	terraform apply
+
+
+Deploying a VPC using CloudFormation
+ - We can give templates in two formats to CloudFormation - yaml or json
+ - While writing the template, we need to first give the AWSTemplateFormatVersion : "2010-09-09" - the only version we currently have.
+ - We create resources under the 'Resources' section.
+ - For any resource, we specify the type of resource. e.g. vpc -> AWS::EC2::VPC
+ - Followed by this, we can specify the Properties - which have attributes based on which resource we are creating.
+
+ - What if we are creating a resource, and we require an attribute to be given whose value is dynamic.
+	e.g. : creating a subnet requires the vpc-id to be given & vpc-ids are dynamically generated on creation of a vpc.
+	So in this case, we can give a reference to the vpc while required to specify the vpc-id.
+
+	So it'll be like 
+		MySubnet:
+		  VpcId : !Ref MyVpc	(MyVpc is the VPC resource)
+
+	
+If we create resource A that has a dependency (reference) on another resource B, then:
+	- resource B is created before resource A.
+	- resource A is destroyed before resource B.
+
+in our example, resource A - subnet & resource B - VPC
+
+DependsOn Attribute
+ - in some scenarios, a !Ref attribute may not be usable or may not be the ideal approach to ensure reference between two resources.
+  E.g. : if an application requires the following : ec2 & RDS.
+	 For the application inside the ec2 to be initialized, it is essential that the RDS be ready first.
+	 So in such scenarios, we cannot use the !Ref attribute.
+
+	This is where we use DependsOn attribute.
+
+	So we can use it like :
+
+		AWSTemplateFormatVersion : '2010-09-09'
+		Resources : 
+		  Ec2InstanceName :
+			Type : AWS::EC2::Instance
+			Properties :
+			  ImageId : ami-398ukdks
+			  InstanceType : t2.micro
+			DependsOn : myDB ============================> this attribute ensures myDB is created before ec2 instance.
+		  myDB :
+			Type : AWS::RDS::DBInstance
+			Properties :
+			  AllocatedStorage : '5'
+			  DBInstanceClass : db.t2.micro
+			  Engine : MySQL
+			  EngineVersion : '5.5'
+			  MasterUsername: MyName
+			  MasterUserPassword : MyPassword123
+
+CloudFormation - errors and rollbacks
+
+Two types of errors :
+	- validation errors - occurs during parse errors on the template given. (e.g. typos, invalid attribute etc.)
+	- Semantic errors / Post API call errors - occurs during the actual resource creation/updation. 
+	  (e.g. creating s3 bucket when the bucket-name is already in use OR providing availabililty zone in another region than where the cloudformation is deploying resources.)
+
+Rollbacks - by default, if an error occurs, the entire resources created will be rolled back and destroyed.
+	    We can disable this option if we want to keep the resources created upon encountering an error.
+
+====================================
+CloudFormation Change sets -
+- similar to how terraform has a 'plan' which lists out all the changes it will be doing based on the template given,
+  CloudFormation also has a similar functionality called change sets.
+
+  So we can see what changes will be made and only if we're okay with it, we can give execute.
+
+CloudFormation - Parameters
+- we can specify values for attributes as parameters so that each time the template is run, we can specify the value differently according to our need.
+	e.g. instance type
+- specified under Parameters section.
+
+	Resources:
+	  Ec2InstanceName:
+		Type : AWS::EC2::Instance
+		Properties :
+			ImageId:"ami-239uifjn"
+			InstanceType: !Ref InstanceTypeParameter
+	Parameters:
+		InstanceTypeParameter:
+			Type:String
+			Default : t2.micro
+			AllowedValues:
+				- t2.micro
+				- m1.small
+				- m1.large
+			Description : Enter t2.micro, m1.small, or m1.large. Default is t2.micro.
+
+CloudFormation - Deletion Policy attribute
+	
+If we want the resources to be retained or backed up before the stack is deleted in CloudFormation, we can use the DeletionPolicy attribute.
+Two ways we can use it 
+	- Retain : CloudFormation keeps the resource without deleting it.
+	- Snapshot : CloudFormation creates snapshot of resource before deleting it.
+
+CloudFormation - StackSets
+- StackSets allow us to deploy stacks across multiple regions or even multiple aws accounts.
+- what happens is, in each of the region we select under a stackset, a stack will be created in that region. these will be called Stack instances.
+- when we delete the StackSet, it will delete all the stack insatnces in the respective regions and also destroy the resources deployed by those stack instances.
+
+Stacksets practical :
+	- We need to create two roles :
+		1) AWSCloudFormationStackSetAdministrationRole : This role we'll use in the administrator account or the central account from which we're creating
+								 the stack sets.
+								It will have a custom policy that allows to assume the role we create in the other account.
+
+		2) AWSCloudFormationStackSetExecutionRole : While creating the role, we'll choose 'another account' option in the IAM console - so we can provide the 
+							    account number to which we intend to let give control (in other words, here we give the account number of the
+							    stack set administrator account)
+							    this we'll use in the destination account. we'll give it an administrator policy (i'm not totally
+							    sold on this - why not just use a CloudFormation Policy ?)
+
+	
+	- Once we create the IAM roles, we can create the StackSets.
+	- here we select the regions and accounts to which it is to deployed.
+	- Once we click deploy, the stack instances will initially show as 'Outdated', but once the specific region's deployment is complete, the status will change to
+          'Current'.
+
+Nested Stacks :
+ - We can create a central stack which contains resources that are commonly created, so that we can reference this entire stack from other custom stacks we may create.
+   E.g. :
+	
+	AWSTemplateFormatVersion: '2010-09-09'
+	Resources:
+	  myStack:
+	    Type: AWS::CloudFormation::Stack
+	    Properties:
+	      TemplateURL: https://s3.amazonaws.com/cloudformation-templates-us-east-1/S3_Bucket.template
+	      TimeoutInMinutes: '60'
+	Outputs:
+	  StackRef:
+	    Value: !Ref myStack
+	  OutputFromNestedStack:
+	    Value: !GetAtt myStack.Outputs.BucketName
+
+The above given stack references another stack via an s3 bucket url.
+Here, 'Outputs' can be used to return some attribute values to other stacks or print to the aws console when the stack is being executed.
+
+=======================================================================================================================================================================
+
+CloudSearch - can be used to search key words in data, where the source for the data could be from s3, dynamodb or local files on computer.
+	    - CloudSearch wil return hits with relevant scores for each hit.
+	    - in a way seems to be similar to ElasticSearch.
+
+CloudWatch Events - used to trigger some action in response to real time events occuring in the environment.
+		  - e.g. when a ec2 instance's state is changed, we get a email saying the state has changed.
+
+CloudWatch Logs:
+	- to push all the logs from ec2 instances to a centralized location, we make use of CloudWatch logs.
+	- For this, we assign a role to ec2 instance that gives it permission to create log groups, and write log events.
+	- The ec2 instance should have the cloudwatch agent installed.	yum install -y awslogs
+	- inside the /etc/awslogs/awscli.conf file, we can set the region to which the cloudwatch agent should push the logs to.
+	- inside the /etc/awslogs/awslogs.conf file, we can set the configuration related to which log file to be pushed to cloudwatch, 
+	  the log group name, log stream name etc.
+	- once this is all setup, start the service using : service awslogs start
+
+VPC Flow logs:
+	- lets us see the logs related to the traffic coming to our network interface/subnet/vpc.
+	- we can enable flow logs at the network interface level, the subnet level or the vpc (global).
+	- IMPORTANT - The vpc flow log format and what each parameter is. (ref. attached image)
+
+
+AWS Config:
+	- AWS Config lets us monitor any changes in configurations or resources that have been made.
+	- We can only view a select set of resources' changes using AWS Config & also for a particular region.
+	- For a resource of a particular ID, we can view the relationships and configuration changes made for that resource.
+	- these are basically sourced from the AWS CloudTrail events.
+	- when we make any changes in a particular resource's config, it will be shown when we view the particular resource in aws config.
+	  e.g. if we make some changes in security group and attach it to a new ec2 instance, it will show the relationship has changed to a new network interface.
+	  
+	 ==> SECURITY GROUPS ARE ATTACHED TO A NETWORK INTERFACE.
+
+AWS Config Rules:
+	- we can set rules to check whether certain compliance conditions are satisfied within our aws account.
+	- there are aws provided set of rules which we can use, or we can write our own custom rules.
+	- when writing custom rules, we can use lambda functions to check the compliance condition.
+
+CloudTrail:
+	- used to view all API operations, user logins etc that occured in the aws account.
+	- we can view the complete event, who started it, the ip address of who initiated it etc.
+
+	- CloudTrail shows the trial events only for 90 days, after which it is stored in the configured s3 bucket.
+	- The log files stored in the buckets are signed with SHA-256 and the digest is also stored in the s3 bucket.
+	- These digests are also encrypted (- or signed - not sure which) with a private and public keys, so we can't tamper with them as well.
+	- The digest options are only available if we enable 'log file validation' option.
+	- The digest will contain the entire list of log files that have been saved in the s3 buckets.
+	- On running validate command, it will check the hash value of all the log files with the actual log files stored in the s3 bucket.
+
+NOTE : 	CLOUDTRAIL LOG DIGESTS ARE DELIVERED TO THE S3 BUCKETS ONLY ON AN HOURLY BASIS!!
+	So it may occur that we tamper with log files but the validation still shows success message [because the digest containing the deleted file in its list of 
+	files have not yet been delivered to the s3 bucket.]
+
+	aws cli commands for validation :
+	
+	aws cloudtrail describe-trails 
+	aws cloudtrail validate-logs --trail-arn [ARN-HERE] --start-time 20190101T19:00:00Z 
+
+AWS X-Ray:
+	- provides insight into functionality of the application,
+	- we need to use the x-ray sdk in our code, which will then send metrics to the x-ray daemon, which further sends the data to x-ray API - which will display 
+	  the data for us.
+	- x-ray will let us show 'traces' - which is basically the occurences where error happened.
+	- x-ray provides integration with following services :
+		- ec2
+		- lambda
+		- elastic load balancing
+		- api gateway
+		- elastic beanstalk
+
+	- and for the following platorms:
+		- Java
+		- Go
+		- .NET
+		- Ruby
+		- Python
+		- nodeJS
+
+
+AWS Kinesis
+ - has 3 components :
+	producer, stream store and consumer
+
+ - 4 services that come under Kinesis are :
+	- Kinesis data streams
+	- Kinesis data Firehose
+	- Kinesis data analytics
+	- Kinesis Video streams
+
+ - Create a stream:
+	- give the stream name & number of shards
+	"shards" can be thought of as like sub-streams.
+	a shard will have a specific throughput. for e.g. a shard can ingest @ 1 MB/s & emits @ 2 MB/s.
+
+ - Putting and retrieving data from a stream:
+	
+	# Kinesis List streams
+	aws kinesis list-streams
+
+	#Put-Record in Kinesis
+	aws kinesis put-record --stream-name kplabs-stream --partition-key 123 --data "Hello from KPLABS"
+	aws kinesis put-record --stream-name kplabs-test --partition-key 123 --data "Hello from KPLABS second time"
+
+	#Getting the shard iterator
+	aws kinesis get-shard-iterator --shard-id shardId-000000000000 --shard-iterator-type TRIM_HORIZON --stream-name kplabs-streams
+
+	#Fetch Records with shard iterator
+	aws kinesis get-records --shard-iterator <shard-iterator-here>
+
+
+While putting a record to a stream, we get the shard-id as part of the response. (shard-id + sequence number for that particular record that was put - this is unique)	
+
+By giving the stream name, shard id and shard-iterator-type thingy, we get the shard iterator as response. We need this to get an item from the stream
+
+AWS Kinesis Firehose:
+ - more to be used for transfer from point A to point B.
+ - we don't need a consumer in case of Firehose.
+ - we can process the data (using lambda for e.g. to compress the data)
+	
+	#list delivery streams
+	aws firehose list-delivery-streams
+	
+	
+	#put record in delivery stream
+	aws firehose put-record --delivery-stream-name stream_name --record='Data="{\"attribute\":1}"'
+
+AWS Kinesis analytics:
+
+ - In case of Firehose, any analytics performed were done at point B i.e after the data was stored & not in real-time.
+   Kinesis analytics differs in the fact that the analystical processing is done in real time. 
+	Supported languages for analytics are SQL & Java.
+
+AWS Kinesis Video streams
+ - Basically for video streaming. duh
+   Reference link : https://www.youtube.com/watch?v=IaLKm9-JUok
+
+Elastic Load Balancing : access logs - https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/access-log-collection.html
+
+==================================================================================================================================================================
+
+DELEGATION:
+ - when there are multiple aws accounts to manage, it becomes difficult for administrators.
+   Therefore, we create a single identity account using which we can use all the other accounts.
+
+E.g. : we need to switch role from account A to account B.
+So how we do this is like :
+
+	1. Create a user in account A.
+	2. Create a cross account role in account B. [Here we specify the accounts which can assume the role]
+	3. Provide access to user in account A to assume the role in account B.
+
+Login as 'user' in account A & click switch role.
+voila!
+
+==================================================================================================================================================================
+
+SAM - Serverless Application Model
+
+- Create a SAM template (JSON or yaml) that defines lambda, API and others.
+- Test, upload and Deploy application using SAM CLI.
+
+Two main steps are :
+	1. Creating package using sam command (which will basically save the package to s3 based off the template file we specify)
+	2. deploy the package using sam command (which will use the output of the previous command - a template file that is compatible with cloudformation -)
+
+During deployment, SAM automatically translates application specs into CloudFormation syntax.
+
+We create one template file, named template.yaml
+& the code inside a file index.js
+
+we create an s3 bucket and run the commands referencing the template file, code file & the s3 bucket where to store the package.
+
+#creating package
+sam package --template-file template.yaml --output-template-file serverless-output.yaml --s3-bucket bucket-name
+
+#deploying package
+sam deploy --template-file serverless-output.yaml --stack-name stackName --capabilities CAPABILITY_IAM
+
+==================================================================================================================================================================
+
+Simple Systems Manager
+ - RUN COMMAND
+ 	-> used to run a command on selected ec2 instances.
+	-> we can give a list of commands to be run on selected ec2 instances and also view the output of the command.
+	-> We need to have SSM agent installed in the ec2 instances & some IAM policies configured in order for this to work.
+
+ - SESSION
+	-> Using systems manager, we can connect to ec2 instances or on-premise instances without the need of setting up bastion hosts, or opening up ssh ports.	
+	-> We need to download and install systems manager in the target instance.
+	-> in case of ec2 instances, we also need to setup IAM policy.
+	-> in case of on-premise instances. we need to setup an 'activation' - which is like an access key id and secret access key.
+		On setting up an activation we get an 'activation code' and 'activation id'.
+	-> using this we register the on-premise instance with AWS using the command :
+		amazon-ssm-agent -register -code "" -id "" --region eu-west-1
+	-> after this we start the ssm agent. systemctl start amazon-ssm-agent
+
+Overview of Systems Manager tier -
+	- Standard tier : enables you to register a maximum of 1000 on-premises servers or VMs per aws account per aws region
+	- Advanced tier : enables you to register more than 1000 on-premises servers or VMs in a single account and region
+
+!!! IMPORTANT NOTE !!!
+All instances configured for Systems Manager using the managed-instance activation for a Hybrid environment are made available on a pay-per-use basis.
+For advanced tier, a charge of $0.00695 per advanced on-premise instance per hour is applicable.
+
+Also, we cannot work with services like Sessions Manager on on-premise instances without enabling Advanced tier.
+So while trying to start a session with an on-premise instance, it will force us to move all on-premise instances in that region to the advanced tier.
+
+Instances that are part of standard tier will not be charged.
+
+When creating an activation, we need to specify the maximum number of instances that can use that activation code and activation id.
+
+==================================================================================================================================================================
+
+AWS Batch
+
+- used to schedule & run batch jobs.
+
+- we are first required to define a job.
+	-> here we give the
+	   job-definition-name
+	   the container which it should use
+	   the command it should execute
+	   the amount of memory
+	   number of vCPUs
+
+- Then we setup the compute environment.
+	- compute environment name
+	- IAM role for the service
+	- IAM role for the ec2 instance
+	- Allowed instance types (if we give optimal, AWS will set the instance type based on the amount of memory and vCPU we have configured)
+- give a job-queue-name
+
+once all the above are setup, we can submit a job.
+while submitting a job, we can select the job-definition, which determines which commands are to be executed.
+
+when we want to delete a job-compute-environment, we must first disable and delete the job-queue and then delete the compute environment.
+
+==================================================================================================================================================================
+
+AWS License manager
+ - used to enforce license policies.
+   so for e.g. if we need to ensure that a particular AMI that is commercial and used under a license is to be launched only in 1 ec2 instance,
+		we can enforce this using license manager by creating a license configuration.
+ - it will show the number of licenses consumed under a license configuration.
+
+ - we create a license configuration and associate a resource (for e.g. ami) with the license configuration.
+ - the configuration can have a limit on either of the 3 :
+	-> vCPUs
+	-> cores 
+	-> sockets
+
+==================================================================================================================================================================
+
+AWS Data Lifecycle management
+ - available in ec2 console under Lifecycle Manager
+ - used to create snapshots of EBS volumes.
+ - all EBS volumes that are having a particular tag as mentioned in the configuration will be backed up.
+ - we can also specify a maximum retention number, which will keep only that much amount of snapshots max.
+==================================================================================================================================================================
+
+AWS Secrets Manager
+ - used to store credentials for databases, ssh etc. so that we can avoid hardcoding them into environment variables etc.
+ - we need to give a secret-name and the corresponding secret.
+ - we can choose whether to rotate the secret or not.
+ - to retrieve it, the user/role should have the appropriate permissions to retrieve it.
+ - in that case, we can retrieve it using AWS SDK/CLI.
+
+When using Secrets Manager to store credentials for RDS instance; 
+	- we give the username and password of the MySQL RDS server
+	- if we enable key rotation, a lambda function is actually created in order to rotate the key.
+	/*if the RDS instance is inside a private subnet, then we need to set the lambda function inside the VPC as well. Otherwise it will not able to reach the RDS instance.
+	
+When using Secrets Manager to store credentials for other database instances:
+	- In this case, we'll have to provide the server address, database name and port details along with the credential details.
+	- Lambda function will not be created by default in this case. We'll have to manually create it.
+
+==================================================================================================================================================================
+
+AWS Service catalogs
+ - its used for standardizing services offered by aws.
+ - for e.g. : we can set a template for launching an ec2 instance, where we predefine the ami, instance type, security group rules etc.
+ - basically so that dumb developers don't go about launching stuff that raises costs XD
+
+In service catalogs, we have :
+	-> Portfolios
+	-> Products
+
+Portfolios are basically a list of products(templates), and it contains permissions as to who can access the products andd launch resources.
+we can add users, groups or roles to portfolios to give permission.
+
+Products can be used to launch resources. Products basically have CloudFormation templates in them, which are used to launch resources.
+
+==================================================================================================================================================================
+
+AWS Organizations
+ - In case where we have multiple aws accounts, we can manage the accounts using a central account called the master account.
+ - The master account can set the permissions for child accounts.
+	for e.g. : there are 2 accounts under the master account, and we set the permissions:
+			- deny all s3 access to account 1
+			- deny all lambda access to account 2
+	In this case, even the root user of account 1 & 2 won't be able to access these services.
+ - Also, AWS Organizations enables us to view the billing for all the managed accounts under the billing dashoard within consolidated billing tab.
+
+When setting up Organization, we have option to choose from :
+	- enable all features
+	- enable only consolidated billing
+
+We can choose to invite an existing account or create a new aws account.
+Once we have the slave account setup, it will be listed under the list of accounts.
+The policies that we want to attach can be created in the master account, and after enabling Service Control Policies (SCP), we can attach this policy to the account.
+When creating a SCP policy, we can choose whether the overall effect of the policy is allow or deny, and which service & what operations under the service are to be
+allowed or denied.
+
+IMPORTANT READ : https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-managedinstances.html
+
+==================================================================================================================================================================
+
+EC2 Auto-recovery
+
+System health check : Monitor the aws systems on which our instance runs. these checks detect problems in the underlying problems in the aws s/ms that require aws
+		      involvement to repair.
+
+Instance health check : monitor the software and network config of our individual instance. EC2 checks the health of the instance by sending an address resolution
+			protocol (ARP) request to the network interface. These require our involvement to repair.
+
+ - We can configure auto recovery so that when an ec2 instance's "system health check" fails, it automatically stops and starts the instance again.
+ - Recovery for ec2 instance is supported only for "system health check" failure, and not for instance health check failure.
+
+==================================================================================================================================================================
+
+S3-Event-Notification
+
+ - We can configure s3 bucket to send notification whenever an event occurs in the s3 bucket.
+ - the events can be pushed to lambda, SNS or SQS queue.
+ - The SNS topic to which we push the notifications to, that needs to be configured with IAM policy allowing notifications from s3 bucket as source.
+
+{
+ "Version": "2008-10-17",
+ "Id": "example-ID",
+ "Statement": [
+  {
+   "Sid": "example-statement-ID",
+   "Effect": "Allow",
+   "Principal": {
+     "Service": "s3.amazonaws.com"
+   },
+   "Action": [
+    "SNS:Publish"
+   ],
+   "Resource": "PUT-YOUR-SNS-ARN-HERE",
+   "Condition": {
+      "ArnLike": { "aws:SourceArn": "arn:aws:s3:*:*:bucket-name" }
+   }
+  }
+ ]
+}
+
+
+==================================================================================================================================================================
+AutoScaling - LifeCycle Hooks //IMPORTANT
+
+- When an ec2 instance in an autoscaling group is launched or terminated, we may require the ec2 to perform some actions as it before it launches/terminates.
+  for e.g. - we may need to register/deregister the instances as it is starting up/ shutting down.
+- For this we can use asg lifecycle hooks.
+- we can create a lifecycle hook in the asg console, where we specify the following params:
+	- lifecycle hook name
+	- lifecycle transition (whether instance launch or termination)
+	- heartbeat timeout (time for which the instances are to remain in wait state during transition. 30 to 7200 seconds )
+	- Default result (ABANDON or CONTINUE) : the action the asg takes when lifecycle hook timeout occurs or unexpected failure occurs.
+
+aws autoscaling complete-lifecycle-action --lifecycle-hook-name SampleTerminateHook --autoscaling-group-name autoscaling-groupname --lifecycle-action-result CONTINUE
+--instance-id i-2c39fjkd9 --region eu-west-1
+
+IN SIMPLE WORDS : If we have a lifecycle hook on an autoscaling group, then the instances in those asg will go to the pending-wait (before startup) or to the 
+		  terminating-wait (before terminating), and will continue startup/termination only after the deregistering (or other scripts) have finished 
+		  execution OR the command given above is run and CONTINUE is passed.
+
+===================================================================================================================================================================
+
+Parameter store
+ - used to store credentials so that we don't have to hard-code it.
+ - we can retrieve the credential by an api call, get-parameter followed by the name.
+ there are three types of values we can store ;
+	- string
+	- string list
+	- string secure
+
+===================================================================================================================================================================
+
+AWS Macie
+- Basically used to monitor and detect credentials, PII etc stored in s3 buckets using machine learning, and gives us report of what level of risks we have
+  in our data.
+- it uses regex to detect certain strings that maybe credentials or other important data.
+- We can view user activity based on location.
+- Currently, 
+	-> Macie can analyse data from s3 and CloudTrail logs only.
+	-> Macie cannot read data that are encrypted.
+===================================================================================================================================================================
+
+DynamoDB streams
+- provides time-ordered sequence of item level changes in the DynamoDB table.
+- while enabling streams, we can choose either of these options :
+	- Keys only,
+	- New image
+	- Old Image
+	- both new and old image
+
+===================================================================================================================================================================
+
+DynamoDB Global table
+- its basically collection of one or more replica tables, all owned by a single aws account.
+- each replica will store same set of items.
+
+for e.g. - if we have a table, table01 in region1 and we enable global table for the table, it will replicate the table to another region specified by us.
+
+while replicating items, aws will put some default attributes into the destination table:
+aws:rep:deleting - boolean
+aws:rep:updateregion - string (the source region from which item is replicated)
+aws:rep:updatetime - Number (the time at which the item was last replicated)
+
+- a table must be empty before global table is enabled for it.
+- streams must be enabled before global table feature can be enabled.
+- replication works vice versa as well. (if we insert/update/delete an item in the replica table, the source table is also updated with the item.)
+- a newly written item is replicated to all replica tables within seconds.
+- all items are replicated. partial replication is not supported.
+- in case of a conflict, (i.e tables in different regions are updated for an item with different value, "last writer wins" policy is used.)
+
+===================================================================================================================================================================
+RDS - read replica
+- Normally, the amount of reads done on a database is significantly higher than the number of writes.
+  Therefore, it would slow down the system if we create a single db for reads and writes.
+
+- To avoid this, we create read-replicas, so that all reads are done on the read-replica & only writes are performed on the original db.
+ Better to set the db-instance class of the replica as the same or higher than the original db.
+
+- Unlike dynamodb's global tables, where we could write stuff to the replica and it would get replicated to our master db,
+			  in RDS, we cannot perform write operations on the read replica. (it will show a message stating MySql is running in read-only mode.)
+
+- The metric we need to keep in check is the 'Replica lag' - which I assume is the num of write-transactions by which the read replica is lagging from the master-db.
+- In order to deploy read replicas, automatic backups must be turned on.
+- Read replicas can be promoted to be their own full fledged db.
+  for e.g. if the master db's region goes down, then we can set the read replica to be the master db.
+- we can have upto 5 read replicas. In case of Aurora, 15.
+
+When we promote a read replica to a full fledged db, we need to make sure the 'Replica lag' is near to zero.
+Because otherwise, the pending transactions will not be successful since the replica instance will be rebooted and the connection will break in between.
+
+===================================================================================================================================================================
+
+Elastic File System (EFS)
+- Network Attached Storage
+- we can add/remove storage as and when needed.
+
+- While configuring EFS, we need to configure the Mount Targets in the availability zone.
+- Mount Targets are per availability zone.
+- Each mount target has its own ip address.
+- But we have a common dns name that is associated with EFS.
+- Mount targets also have a security group associated to it.
+
+Things we need to configure while creating EFS:
+	- VPC
+	- Mount targets
+	- Performance Mode (General purpose OR Max I/O)
+	- Throughput mode (Bursting or Provisioned)
+
+- The throughput associated with an EFS file system depends on how much data is stored in the EFS file system.
+  So suddenly putting a 1TB file into a new EFS file system will cause issue with throughput.
+
+  So if we're intending to copy huge amount of data, better to use "provisioned" throughput rather than "Bursting".
+
+
+yum -y install nfs-utils
+
+# making directory to mount
+mkdir ~/efs-mount-point 
+
+# mounting efs
+mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport fs-e29ac903.efs.us-east-1.amazonaws.com:/   ~/efs-mount-point
+
+we'll also have to configure the security group of the Mount target to allow traffic from ec2 instance's ip.
+
+
+===================================================================================================================================================================
+
+
+RTO and RPO 
+
+RTO - Recovery Time Objective : It is the time with which we can restore our infrastructure to another region in case of the original region goes down.
+RPO - Recovery Point Objective: It is the point-in-time to which we can restore our system to. for e.g : if RPO is 5 hours, then we can restore the system to a state it was 
+				5 hours ago or the data after restore will be the data that existed 5 hours before.
+
+Both should be as minimal as possible - So we can recover the system as quick as possible with data as latest possible.
+
+===================================================================================================================================================================
+
+RDS Multi-AZ Deployments 
+- In this case, a backup database instance is kept running in another availability zone, so that in case of any failure in the master db, failover is automatically 
+  handled by RDS to the secondary db instance.
+- The endpoint of the db remains the same after failover.
+- Since there are two instances running, the cost will be the double. (duh) 
+- Multi-AZ is not covered in free tier.
+
+The Failover conditions are :
+	- Loss of availability in primary availability zone.
+	- Loss of network connectivity to primary.
+	- Compute unit failure on primary.
+	- Storage failure on primary.
+
+Multi-AZ is supported for MySQL, MariaDB, PostgreSQL and Oracle (Aurora too I think ? - check before exam)
+Multi-AZ performs synchronous replication (read replica does asynchronous)
+
+-> We can see the events occuring in the db instances under events tab. 
+   We can create Event Subscriptions for these events, so that in case of any events (failure, failover etc), we can be notified.
+   The event notifications can be subscribed by any instances as well.
+
+Synchronous replication VS Asynchronous replication
+
+Synchronous - write is not committed unless it is written on both the instances.
+	    - higher durability, since both instances will be having the data upto date.
+	    - higher transaction latency, as a single write requires to be performed on both the instances.
+
+Asynchronous- Writes are not in real-time across master and replica.
+	    - Replica can fall behind master, determined by replication lag.
+
+===================================================================================================================================================================
+
+Auto Scaling -
+- has two components:
+	- Launch configuration
+	- Auto scaling groups
+
+Launch configuration
+- Name
+- AMI
+- Instance type
+- Security groups
+- IAM role
+
+Auto Scaling groups
+- Minimum and max num of instances
+- VPC and subnets
+- Load balancer
+- Health check
+
+4 types of Auto scaling plans :
+	- Maintain current instance levels : we specify number of instances to keep, and the asg will perform periodic health checks 
+					     and replace any unhealthy instances with new instances.
+
+	- Manual scaling : We manually update the config prior to any expected spike in traffic.
+	- Scheduled scaling : We can create a schedule where the a particular asg config is active.
+	- Dynamic scaling : We can configure asg to scale-up or down according to CPU utilization, or other metrics.
+
+
+
+A/B testing -
+- similar to Blue/Green deployment, where we divert some percentage of the traffic to the new website/system, and once its found to be stable, we divert more and more
+  traffic to it.
+
+===================================================================================================================================================================
+
+Jenkins in AWS :
+- advantage of using Jenkins over AWS services to create pipeline is that, Jenkins can handle CodeBuild, CodeDeploy and CodePipeline stuff all by itself.
+- No need of providing buildspec.yml file, we can directly provide commands to be executed.
+
+Jenkins installation in Ec2 instance:
+
+# Installing Pre-Requisite Java packages for Jenkins:
+  yum install -y java-1.8.0-openjdk-devel
+
+
+# Installation of Jenkins
+  wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins.io/redhat/jenkins.repo
+  rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+  yum install jenkins -y
+  systemctl status jenkins
+  systemctl start jenkins
+
+Jenkins will need git to be setup and the codecommit credentials to be supplied.
+Also, we may need to give s3 access to jenkins so that it can put the built artifacts in the corresponding bucket.
+
+Distributed builds in Jenkins:
+- When we have scenarios where multiple builds need to be carried out, instead of a single Jenkins instance running all the jobs,
+- We can assign worker nodes/instances that carry out the builds as distributed by the master Jenkins instance.
+- AWS provides a plugin with which we can launch ec2 instances when distributed builds are required to be carried out.
+
+Setting up distributed build in Jenkins :
+	- Creat a second instance in ec2 console (easier to duplicate the jenkins instance.)
+	- If we click on Build Executor status in Jenkins console, we can view the nodes available.
+	- While creating a new node, specify a remote root directory. (which is the place where the agent will be installed in the remote server and other files will
+									be stored, i guess.)
+	- We then provide the private/public ip of the agent instance.
+	- Jenkins also needs the security credentials for ssh'ing into the instance and installing the agent.
+	- We need to make sure that the agent instance has java installed - because the agent also requires java for running.
+	- Once we click ok and refresh the agent should be ready.
+
+Create a job and test if the job is executed in the agent node by printing the ip configurations in the build. /usr/sbin/ifconfig
+
+Amazon Ec2 Plugin for Jenkins -
+- In earlier case, we are manually launching an instance from the ec2 console and then configure it from Jenkins.
+  So when there is no longer any builds running, the instances are still up and this raises infra costs.
+
+- Amazon ec2 plugin for jenkins allows Jenkins to start agents on ec2 on demand, and kill them as they are unused.
+  With this plugin, if Jenkins noticies that your build cluster is overloaded, it'll start instances using the EC2 API and automatically connect them as Jenkins agents.
+  When the load goes down, the excess ec2 instances will be terminated.
+
+- To install the plugin -> Go to Manage Jenkins -> Manage plugins -> search and install the ec2 plugin.
+- Once its installed	-> Go to Manage Jenkins -> Configure system -> Under cloud, give the configurations like what ami to use, what type of instance to use etc.
+
+===================================================================================================================================================================
+
+Validating Pull Requests using CodeBuild
+- We can configure CodeBuild to validate the branch for which a pull request has been raised.
+- The buildspec.yml file in the repository will contain the list of tests to be performed on the newly committed code.
+
+The workflow of the setup is as follows :
+ - Developer creates Pull Request to merge into master
+ - Creationg of PR will trigger CloudWatch which will invoke Lambda and CodeBuild. (The lambda function just updates the messages on the Pull Request.)
+ - CodeBuild will test and validate the changes.
+ - Once build completes, CloudWatch Events detects it. The outcome is updated in the PR.
+
+ 
+===================================================================================================================================================================
+
+Automated tests - refer attached images /* IMPORTANT */	
+
+===================================================================================================================================================================
+
+CloudFormation - CreationPolicies
+
+- Normally, when we create resources with CloudFormation, it will mark a resource status as COMPLETED as soon as the resource has been created.
+  But just because a resource has been created, it may not be application-ready.
+  For e.g. : after an ec2 instance is up, CloudFormation will set status to COMPLETED. But this may not mean that the ec2's user data scripts have completed execution
+	     & therefore it may not have all the application-specific stuff installed.
+
+- To ensure that CloudFormation sets the status to COMPLETED only after it is application ready, we make use of CreationPolicy.
+  When using CreationPolicy, CloudFormation will set the status to COMPLETED only after it receives back a SUCCESS signal from the ec2 instance.
+
+E.g. CloudFormation template using CreationPolicy :
+
+Resources:
+	Ec2Instance :	//Resource name. 
+	  Type : "AWS::EC2::Instance"
+	  Properties:
+		ImageId:ami-0d398udk39
+	  CreationPolicy:
+		ResourceSignal:
+		  Timeout: PT15M
+		  Count : 1
+
+
+We can manually send a SUCCESS signal using the command :
+	aws cloudformation signal-resource --stack-name StackName --logical-resource-id Ec2Instance --unique-id i-30ilkjdf09df --status SUCCESS
+
+logical-resource-id : is the resource name we give in the cloudformation template. 
+
+Two major resource-types we use CreationPolicies for are : 
+- AutoScalingGroups
+- Ec2 instances
+
+There is also an option of WaitCondition to achieve similar purpose, but we use it for other resource types.
+
+===================================================================================================================================================================
+
+WaitCondition and WaitConditionHandle
+
+- WaitCondition pauses the execution of a stack and waits for success signals before it resumes the stack creation.
+- If no signal is received before the timeout, the WaitCondition enters the CREATE_FAILED state and the stack creation is rolled back.
+
+- To make use of WaitCondition, we need to use a WaitConditionHandle.
+  WaitConditionHandle reference resolves to a presigned URL that is used to signal success or failure signals to WaitCondition.
+
+E.g. CloudFormation template using WaitCondition :
+
+Resources:
+	Ec2Instance:
+	  Type : "AWS::EC2::Instance"
+	  Properties:
+	    ImageId:ami-0kjb3r0883
+	
+	PrivateWaitHandle:
+	  Type: AWS::CloudFormation::WaitConditionHandle
+
+	PrivateWaitCondition:
+	  Type: AWS::CloudFormation::WaitCondition
+	    Properties:
+	      Handle: !Ref PrivateWaitHandle
+	      Timeout: '36000'
+	      Count: 1
+
+- When using WaitCondition, as soon as the ec2 instance is up, the status of the ec2 instance resource is set to COMPLETED.
+- However, until the application is setup, the status for WaitCondition remains in CREATE_IN_PROGRESS.
+- So this holds the entire stack execution in pause state.
+
+- When the resource is application-ready, we can send an SUCCESS signal to the presigned url returned by the WaitConditionHandle.
+- As soon as the success signal is received, the WaitCondition resource status is set to COMPLETED and the stack execution resumes.
+
+- Main difference between Creation policy and WaitCondition is :
+
+		CreationPolicy 						WaitCondition
+ - we make use of API call to give success		- we send SUCCESS signal to presigned url returned
+   signal.						  by WaitConditionHandle.
+
+- The EC2 instance remains in CREATE_IN_PROGRESS	- The WaitCondition resource remains in CREATE_IN_PROGRESS
+  state.						  state.
+
+=======================================================================================================================================================================
+
+
+IMPORTANT POINTS FOR EXAM:
+
+CI/CD :
+
+Continous Integration : Users commits to GIT and code is automatically built & verified.
+Continous Delivery : One step further where testing is done in production-like environment and code maybe deployed to production AFTER MANUAL VERIFICATION.
+Continous Deployment: Similar to Continous Delivery except code is automatically deployed WITHOUT MANUAL VERIFICATION.
+
+If manual verification is needed, go for Continous Integration/Continous Delivery.
+If end-to-end automation is required, CI/Continous Deployment.
+
+AWS Code services-
+Source : CodeCommit
+Build  : CodeBuild
+Testing: CodeBuild
+Deploy : CodeDeploy
+
+CodeCommit -
+- fully managed source control service that hosts secure Git-based repositories.
+- understanding branching workflow is important.
+- be aware of the IAM permissions related to Merge requests scenarios.
+
+- Importance of Pull Request Workflow
+
+CodeBuild - 
+- fully managed build service from AWS.
+- we can build from various sources such as CodeCommit, S3, BitBucket, GitHub etc.
+- Allows us to BUILD & TEST code.
+- Serverless replacement to Jenkins.
+
+ BuildSpec File :
+	- is collection of build commands and related settings, in YAML format, that CodeBuild uses to build.
+	- phases of each build:
+		Install		- install packages in build environment.
+		pre_build	- Commands to run before executing build. e.g. login to ecr
+		build 		- Commands that run during the build.
+		post_build	- Commands to run after build. for e.g. send notifications about build status, push docker images etc.
+ 
+CodeDeploy - 
+- deployment service that automates application deployments to ec2 instances, on-premise instances, lambdas, or ECS services.
+- Here the file that contains the configurations is AppSpec File.
+
+ Deployment using CodeDeploy:
+	- supports ec2 as well as on-premise instances.
+	- deployment agent should be installed on all target servers.
+	- AppSpec.yml to configure commands which need to run at each phase.
+	- Supports revision related functionality.
+
+	- Various deployment configurations like :
+		->OneAtATime
+		->HalfAtATime
+		->AllAtOnce
+	- We can also specify custom deployment type if needed.
+
+CodePipeline -
+- automatically triggers your pipeline when there is a commit in the source repository, providing output artifacts from source stage.
+
+If we want to adopt Continous Delivery approach, CodePipeline supports "Manual approach" where it requires approval before deployment.
+If we want to go for Continous Deployment, then we can automate the entire pipeline, without stopping for manual intervention.
+
+Refer image related to CodePipeline actions.
+Ghost Inspector - just an external vendor that can test the code I think ?
+
+Cross Account Pipelining is also possible. [REFER IMAGE] - if we want encryption during this, we can use KMS [key management service?]
+
+
+Jenkins -
+- be aware of the distributed architecture of Jenkins for high availability.
+- Disadvantage of Jenkins is that the customers will have to manage everything.
+- understand the need of amazon ec2 plugin for Jenkins.
+- Jenkins can automatically detect when code is pushed to repository and start build [we'll need to configure this of course.]
+
+
+CloudWatch Events -
+- enables us to respond to changes in our aws environment in real-time.
+e.g. use case : deregistering ec2 instances when it gets terminated.
+
+
+Overview of Automated tests
+- Unit tests
+- Integration tests
+- Regression tests
+
+Deployment types
+- In-place deployments : The application on each instance in the deployment group is stopped, latest revision installed and new version of the application is started
+			 and validated.
+
+- Rolling updates : deployment done on servers one by one.
+
+- Canary deployment model : process where we deploy a new feature and shift some % of traffic to the new feature to perform analysis to see if feature is successful.
+ [we can use Route53 to route % of traffic to a certain server.]
+
+- Blue/Green deployment : VERY IMPORTANT
+  Blue environment is an existing environment in production leaving live traffic.
+  Green envioronment is parellel environment running different version of the application.
+
+  Deployment = routing production traffic from blue to green environment.
+  
+- Red Black deployment : IMPORTANT 
+  Two identical environments namely RED and BLACK are run.
+  At any time, only one of the environments is live, with the live environment serving all production traffic.
+  Deployment of new version of application happens on idle environment and traffic is switched.
+
+- Immutable upgrades
+  alternative to rolling updates.
+  During an immutable environment update, the capacity of our environment doubles for a short time when the instances in the new AutoScaling group start serving requests
+  before the original asg instances are terminated.
+
+
+
+Infrastructure as Code - CloudFormation
+
+- be thorough with writing CloudFormation templates
+- ChangeSets :  allows us to create a change set by submitting changes against the stack you want to update.
+		CloudFormation compares the stack to the new template and/or parameter values and produce a change set that you can review and then choose to apply.
+
+- StackSets  :  allows us to deploy stacks across multiple aws accounts/regions from single location.
+  E.g. : When we want to enable AWS config in multiple regions. 
+
+- Nested Stacks : instead of copy pasting the same component, we can create a dedicated template with those components defined and reference them from the other template
+		  and reference them from other template, called nested stacks.
+
+- DependsOn attribute : order of creation and deletion of resources referencing each other.
+  e.g. scenario : application should be started only once the database is up. So we can add a DependsOn attribute in the application to the database.
+
+- Deletion Policy : allows us to preserve or backup resources when its stack is deleted.
+		    Retain : CloudFormation keeps the resource without deleting it.
+		    Snapshot : CloudFormation takes a snapshot of the resource before deleting it.
+
+- Creation Policy : use it for ec2 instances and asg.
+- WaitCondition & WaitConditionHandle : for other resources.	Note the differences between both.
+
+- CloudFormation : Custom Resource Support 
+	- allows us to extend CloudFormation to support more resources, such as non-AWS specific resources or resources which CloudFormation does not support.	
+	(not all aws services have been supported by CloudFormation yet.)
+
+ Sample Template :
+
+ CustomApp:
+   Type:'Custom::CustomApp'
+   Properties:
+	Name:!Ref AppName
+	ServiceToken:<LambdaFunctionARN>
+
+	NOTE: Within the lambda function, we can specify the logic we intend to do. [which is creating the custom resource I presume]
+
+
+
+
+ElasticBeanstalk
+
+- allows users to deploy and manage applications in the AWS Cloud without having to learn about the infrastructure that runs those applications.
+- The ideal suggested method is that we never have to SSH into the servers to configure, and that all the configurations must be setup via ebextenstions.
+
+Important points :
+	- supports containerization environments.
+	- Blue/Green Deployments with EB.
+	- Difference between Web and Worker environments.
+	- Commands vs Container commands in ebextensions //very important 
+	- EB swap URL changes the CNAME to new environment. //very important
+	- EB Immutable deployments.
+
+
+AWS OpsWorks
+- configuration management service that provides managed instances of Chef and Puppet.
+- various OpsWorks stacks and how to create them
+
+- OpsWorks LifeCycle Events : whenever an event occurs, it runs set of chef recipes assigned to that event.
+	- setup
+	- configure
+	- deploy
+	- undeploy
+	- shutdown
+
+- OpsWorks databags at a high level.
+
+Elastic Container Service
+
+- ECR
+- EKS : Managed Kubernetes Service
+- Fargate
+- ECS Task Definition
+

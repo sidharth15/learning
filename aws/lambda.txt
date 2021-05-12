@@ -1,0 +1,14 @@
+Lambda with Kinesis data streams
+ - Kinesis streams have shards, which Lambda polls to get records in a batch.
+ - Each shard will ensure the ordering of the items in it.
+ - So an event triggering the lambda function will have a batch of records, in order.
+
+ - Now, previously the case used to be that:
+	=> each shard has one lambda invocation.
+	=> So, to increase throughput, only way was to increase the number of shards.
+
+   But now, thats not needed: we can set a ParellelizationFactor (or concurrent batches per shard)
+   With this, Kinesis will internally divide the contents of a shard into batches, where each batch will have items with
+   the same partition key.
+   So, concurrent lambda invocations won't mess up the processing order.
+   refer: https://aws.amazon.com/blogs/compute/new-aws-lambda-scaling-controls-for-kinesis-and-dynamodb-event-sources/

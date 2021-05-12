@@ -1,0 +1,30 @@
+1. for 2-way data binding, use ngModel:
+
+	<input [(ngModel)]="selectedHero.name" placeholder="name"/>
+
+
+2. For toggling a div on or off based on a variable's value. use *ngIf:
+
+	<div *ngIf="selectedHero">
+	.
+	.
+	</div>
+
+3. For looping through a list, creating multiple elements in a DOM (for eg displaying a list of names), use *ngFor:
+
+	<ul>
+	  <li *ngFor="let hero of heroes">
+	  </li>
+	</ul>
+
+4. For adding a css styling to an element based on a condition, use class.<classname>:
+
+	<ul>
+	  <li *ngFor="let hero of heroes"
+	       [class.selected]="hero===selectedHero">
+	  </li>
+	</ul>	
+
+5. Angular CLI, generate a component:
+	ng generate component component-name
+

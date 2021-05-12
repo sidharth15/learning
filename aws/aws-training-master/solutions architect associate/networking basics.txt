@@ -1,0 +1,64 @@
+https://www.digitalocean.com/community/tutorials/understanding-ip-addresses-subnets-and-cidr-notation-for-networking
+
+networking basics:
+
+ipv4 - 32 bits
+ipv6 - 128 bits
+
+ipv4 addresses :
+binary - 
+0000 0000 : 0000 0000 : 0000 0000 : 0000 0000
+
+each of the groups of zeroes separated by : is called octets.
+
+classes of ip addresses :
+class A - binary address starting with 0-
+class B - binary address starting with 10-
+class C - binary address starting with 110-
+class D - binary address starting with 1110-
+class E - binary address starting with 1111-
+
+identifying networking portions and host portion :
+
+class A : uses the remainder of the first octet to identify network & the rest 
+	  to identify host.
+class B : uses the remainder of first octet + second octet for network portion.
+class C : uses the remainder of first octet + second + third octet
+
+
+subnet mask : how many bits to look for getting the network portion.
+	     (whats given above itself)
+how many 1's in subnet mask --> tells which bits are to be looked up for getting
+				network portion
+
+do bitwise AND between ipv4 address and the subnet mask to get the network portion 
+of the address.
+the remaining would be the host portion.
+
+
+to create further subnets, add a 1 to the subnet mask.
+so 1111 1111 1111 0000 is changed to 1111 1111 1111 1000
+
+so doing bitwise AND will give us 192.168.0.128
+
+so the subnet here is 192.168.0.128
+
+and the first subnetwork is from 192.168.0.1 (cant use 0 and 255 i think)
+			     to  192.168.0.127
+
+and the second subnetwork is from 192.168.0.129
+			      to  192.168.0.255
+
+NOTE : The subnet itself is not used as the ipv4 address.
+
+CIDR : Classless Inter Domain Routing
+
+what CIDR does is, with the ip address itself, we can give how many bits of the ip
+address represents the network portion .
+so for 192.168.0.15/24,
+			the first 24 bits of the ip address given are considered 
+			significant for the network routing.
+
+so previously we couldn't combine addresses from network 192.168.0.0 and 192.168.1.0
+since the netmask for class C was 255.255.255.0
+but with CIDR we can give 23,

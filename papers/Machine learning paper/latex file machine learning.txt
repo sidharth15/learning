@@ -1,0 +1,169 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out
+                                                          % if you need a4paper
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4
+                                                          % paper
+
+\IEEEoverridecommandlockouts                              % This command is only
+                                                          % needed if you want to
+                                                          % use the \thanks command
+\overrideIEEEmargins
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% The following packages can be found on http:\\www.ctan.org
+%\usepackage{graphics} % for pdf, bitmapped graphics files
+%\usepackage{epsfig} % for postscript graphics files
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{amsmath} % assumes amsmath package installed
+%\usepackage{amssymb}  % assumes amsmath package installed
+
+\title{\LARGE \bf
+Are Data Structures and Algorithms obsolete in the \newline Age of Machine Learning
+}
+
+%\author{ \parbox{3 in}{\centering Huibert Kwakernaak*
+%         \thanks{*Use the $\backslash$thanks command to put information here}\\
+%         Faculty of Electrical Engineering, Mathematics and Computer Science\\
+%         University of Twente\\
+%         7500 AE Enschede, The Netherlands\\
+%         {\tt\small h.kwakernaak@autsubmit.com}}
+%         \hspace*{ 0.5 in}
+%         \parbox{3 in}{ \centering Pradeep Misra**
+%         \thanks{**The footnote marks may be inserted manually}\\
+%        Department of Electrical Engineering \\
+%         Wright State University\\
+%         Dayton, OH 45435, USA\\
+%         {\tt\small pmisra@cs.wright.edu}}
+%}
+
+\author{Sidharth Ramesh$^{1}$% <-this % stops a space
+\thanks{*This work was not supported by any organization}% <-this % stops a space
+\thanks{$^{1}$S. Ramesh is with the Government College of Engineering Kannur
+        {\tt\small sidharthr44@gmail.com}}%
+}
+
+\begin{document}
+
+
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+The field of Machine Learning deals with the development of systems that can automatically learn and improve from experiences. Machine Learning \& Artificial Intelligence have been rapidly developing over the past decade, having its effect on many diverse aspects of the society. This evolution in computer science technology has led to innovative and unexpected solutions, particularly because the traditional algorithmic approach relies on human understanding of a particular problem, whereas Machine Learning deals with deriving solutions from data. In this paper, we compare and contrast the benefits of Machine Learning approach with the traditional Data Structures and Algorithms approach towards a problem solution.
+
+\end{abstract}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{INTRODUCTION}
+
+In Computer Science, an algorithm is any well-defined computational procedure that takes some value, or set of values, as input and produces some value, or set of values, as output. An algorithm is thus a sequence of computational steps that transform the input into the output. <quote Cormen in DSA>. A data structure is an arrangement of data in a computer's memory or even disk storage. An example of several common data structures are arrays, linked lists, queues, stacks, binary trees, and hash tables. Algorithms are used to manipulate the data contained in these data structures as in searching and sorting.\\
+\indent However, in the above scenario of algorithmic approach, the computer can be thought of a naïve child – a very fast child nonetheless, but a child who knows only to follow step by step instructions provided to him. The concept of learning remained alien to computers, as humans themselves couldn’t directly tell a computer how to learn something since we couldn’t describe it in an algorithmic manner. This is where Machine Learning showed its significance. Instead of scripting out a list of instructions on how to a particular task, we make use of labelled or classified data to enable the machine figure out the logic to map the input to the output. To take the example of a system that identifies handwritten alphabets, we provide the system with labelled images of handwritten characters Thus, the area of Machine Learning deals with the design of programs that can learn rules from data, adapt to changes, and improve performance with experience. <quote paper mlt>
+
+
+\section{Comparison of Machine Learning with Data Structures and Algorithms}
+
+\subsection{Algorithmic approach to developing solution to a problem}
+
+An algorithm is a blueprint for solving a problem. There is no one fixed way of developing an algorithm. Some algorithms are very informal in nature, whereas some may have a more mathematical approach. For example, the algorithm to buy a pencil from a store would be very simple, compared to an algorithm sort n numbers.\\
+\indent In any scenario, the general approach to develop an algorithm would involve the following steps:
+\begin{enumerate}
+    \item Obtain a description of the problem.
+    \item Analyze the problem.
+    \item Develop a high-level algorithm.
+    \item Refine the algorithm by adding more detail.
+    \item Review the algorithm.
+\end{enumerate}
+\indent Algorithms have an associated complexity associated with them – time complexity and compute complexity. For an algorithm to a problem with a given complexity, the time and accuracy of the result remains the same. \\
+\indent Due to this reason, algorithms are more suited for scenarios where human beings have an accurate solution to the problem. Knowing the solution enables us to prescribe a finite set of steps that need to be taken to solve it – which is what an algorithm is.
+
+
+\subsection{Machine Learning Approach to solving a problem}
+
+Here, we tackle the problem with a different approach. Consider an example of a Neural Network that is used to detect a handwritten digits. This is done using training of the neural network using labelled data. So for a handwritten character recognition, images of handwritten characters categorized and labelled as a digit is used as training data. The Neural Network then learns the relationship between the input - the set of pixels of the captured image and the output – the recognized digit.\\
+\indent With Machine Learning, the focus is not on coming up with a solution for the problem ourselves, but enabling the system to be able to come up with it. Machine Learning Theory, also known as Computational Learning Theory aims understand the fundamental principles of learning as a computational process. Since in this approach we don’t have to be concerned about devising a sequence of steps that equates to the solution, it is perfectly suitable for scenarios where we don’t know how. Examples for this are object recognition, facial recognition where we ourselves know precisely how to do it, but we cannot directly tell a computer how to do it.\\
+\indent Unlike algorithmic approach, the time and accuracy of the result from a system using machine learning could vary from one system to another – as there is huge dependency on the data used for training. The training data set also causes the system to run into problems of classification bias and overfitting.
+
+\section{CONCLUSIONS}
+\indent The advent of Machine Learning started a huge revolution in the field of Artificial Intelligence and Robotics, whereby machines gain the capability to learn and improve from feedback data. Though the possibilities of such systems are enormous, they are far from eliminating the need of traditional data structures and algorithms. The core area of application for the two are almost mutually exclusive. Algorithmic approach can be applied in areas where human beings have a clear understanding of the solution to be taken for a problem, whereas Machine Learning can be applied in scenarios where the input to output relationship is oblivious to us. This doesn’t necessarily eliminate the possibility of both approaches working for solving the same problem. In fact, the application of algorithms are now taking a different turn – in implementing Machine Learning training methods. Even in the most autonomous system, we make use of algorithms for its auxiliary subsystems or subcomponents. The day when algorithms are completely obsolete for human beings may only come at a time of technological singularity – when machines are self-aware and capable of complete independence in decision making.
+
+
+
+\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+                                  % on the last page of the document manually. It shortens
+                                  % the textheight of the last page by a suitable amount.
+                                  % This command does not take effect until the next page
+                                  % so it should come on the page before the last. Make
+                                  % sure that you do not shorten the textheight too much.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{APPENDIX}
+
+Appendixes should appear before the acknowledgment.
+
+\section*{ACKNOWLEDGMENT}
+
+The preferred spelling of the word ``acknowledgment'' in America is without an ``e'' after the ``g''. Avoid the stilted expression, ``One of us (R. B. G.) thanks . . .''  Instead, try ``R. B. G. thanks''. Put sponsor acknowledgments in the unnumbered footnote on the first page.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+References are important to the reader; therefore, each citation must be complete and correct. If at all possible, references should be commonly available publications.
+
+\begin{thebibliography}{99}
+
+\bibitem{c1}Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest Introduction to Algorithms, Second Edition 
+\bibitem{c2}William T. Freeman and Edward H. Adelson. The design and use of steerable filters. IEEE Transactions on Pattern Analysis and Machine Intelligence, 1991
+\bibitem{c3} H. Greenspan, S. Belongie, R. Gooodman, P. Perona, S. Rakshit, and C. Anderson. Overcomplete steerable pyramid filters and rotation invariance. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 1994.
+\bibitem{c4} K. Sung and T. Poggio. Example-based learning for viewbased face detection. In IEEE Patt. Anal. Mach. Intell., volume 20, 1998.
+\bibitem{c5} P. Dias, A. Kassim, and V. Srinivasan, “A neural network based corner detection method,” in IEEE International
+Conference on Neural Networks, vol. 4, 1995.
+\bibitem{c6}J.M Buhmann, "Data clustering and learning" in the Hand-book of Brain Theory and Neural Networks, M. A. Arbib, Ed., MIT Press, Boston, 1995.
+\bibitem{c7}Silver, D. et al. Mastering the game of Go without human knowledge. Nature 550, 354 (2017).
+\bibitem{c8} Lee, H., Grosse, R., Ranganath, R., and Ng, A.Y. Convolutional deep belief networks for scalable unsupervised
+learning of hierarchical representations. In ICML, 2009.
+\bibitem{c9} Pinto, N., Cox, D. D., and DiCarlo, J. J. Why is real-world visual object recognition hard? PLoS Computational
+Biology, 2008.
+\bibitem{c10} Krizhevsky, A. Learning multiple layers of features from tiny images. Technical report, University of Toronto, 2009.
+\bibitem{c11} S. Chen, B. Mulgrew, and P. M. Grant, "A clustering technique for digital communications channel equalization using radial basis function networks", IEEE Trans. Neural Networks, vol. 4, pp. 570--578, July 1993.
+\bibitem{c12}H. Samet and R.E. Webber, "Hierarchical Data Structures and Algorithms for Computer Graphics, Part I: Fundamentals," CGe.4,
+May 1988, pp. 48-68.
+\bibitem{c13} H. Samet. "The Quadtree and Related Heirarchical Data Structures," ACM Computing Surveys, June 1984, pp. 187-260.
+\bibitem{c14} Amir, A., Efrat, A., Indeyk, P., Samet, H. Effecient regular data structures and algorithms for location and proximity problems.
+\bibitem{c15} Ang, C. H., Samet, H., And Shaffer, C. A. A new region expansion for quadtrees. IEEE Transactions on Pattern Analysis and Machine Intelligence 12,7 (July 1990), 682-686
+\bibitem{c16} S. Shalev-Shwartz and S. Ben-David. Understanding Machine Learning: From Theory to Algorithms. Cambridge University Press, 2014
+\bibitem{c17}A. Ben-Tal and A. Nemirovski. Lectures on modern convex optimization: analysis, algorithms, and engineering applications. Society for Industrial and Applied Mathematics (SIAM), 2001.
+\bibitem{c18} Coates, A., Lee, H., and Ng, A. Y. An analysis of singlelayer networks in unsupervised feature learning. In AISTATS 14, 2011. 
+\bibitem{c19} Hinton, G. E., Osindero, S., and Teh, Y. W. A fast learning algorithm for deep belief nets. Neural Computation,
+2006.
+\bibitem{c20} Raina, R., Battle, A., Lee, H., Packer, B., and Ng, A.Y. Self-taught learning: Transfer learning from unlabelled
+data. In ICML, 2007.
+
+
+
+
+\end{thebibliography}
+
+
+
+
+\end{document}

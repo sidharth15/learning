@@ -1,0 +1,2 @@
+1. files with extension .sh inside /etc/profie.d get executed 
+whenever a bash login shell is executed (also when the desktop session loads)

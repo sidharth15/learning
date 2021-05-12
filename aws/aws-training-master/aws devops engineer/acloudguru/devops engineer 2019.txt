@@ -1,0 +1,557 @@
+AWS Certified DevOps Engineer Professional 2019
+- Nick Triantafillou
+
+Domain 01 : SDLC & Automation
+CodeCommit - not much was said.
+CodeBuild
+ - By default, CodeBuild looks for a file named buildspec.yml in the source code root directory.
+ - If our buildspec file uses a different name or location, enter its path from the source root.
+   for eg. buildspec-two.yml or configuration/buildspec.yml
+
+ - we can choose our artifacts storage location.
+ - we can choose if we want the artifacts to be zipped or encrypted.
+
+ - Build triggers : we can create a trigger which automatically does a build every hour/week/month or based on a cron expression that we provide.
+
+CodeDeploy
+ - deployment service that automates deployments to:
+	-> Ec2 instances
+	-> on-premise instances
+	-> lambda functions
+
+ - while configuring deployment to ec2 instances, we need to install ruby so that CodeDeploy agent can be installed and started.
+   Note : CodeDeploy uses RUBY to be setup.
+
+ - In the CodeDeploy console, we first create an application. This is where we select where to deploy the application to : 
+	whether ec2/on-premise servers or Lambda.
+
+ - After this we create a deployment group:
+	 - Under the environment configuration, we can select whether the application is to be deployed to : (when we select the option as deploy to on-premise/ec2 instances)
+		-> ec2-auto-scaling-groups
+		-> ec2 instances (based on tags)
+		-> on-premise instances
+
+	Note that we can select one or more options at a time from the above.
+
+	- we can configure load balancers used, if any, so that during the time of deployment, whatever traffic comes through is blocked and allows traffic to it again
+	  after the deployment succeeds.
+
+ - After creating deployment group, we create the deployment:
+	- Where we provide the location where our built-artifacts are present. This should be having the appspec.yml script so that CodeDeploy knows 
+	  what to do during deployment.
+	- On creating a deployment, the deployment process starts.
+
+CodePipeline
+ - integrating all three services : CodeCommit, CodeBuild, CodeDeploy to form a CI/CD pipeline.
+ - we can give source as s3, GitHub, or CodeCommit.
+ - We need atleast 2 stages, where the second stage could be either CodeBuild or CodeDeploy. We can have both as well.
+
+ - If we want to add testing stage to CodePipeline, we can just edit the pipeline and add stage.
+ - While adding a stage, there are options to add :
+	- Manual approval stage
+	- Build  [CodeBuild, Jenkins, Solano CI]
+	- Deploy [CloudFormation, CodeDeploy, ElasticBeanstalk, OpsWorks stacks, Service catalog, ECS]
+	- Invoke [Lambda]
+	- Source [CodeCommit, S3, GitHub]
+	- Test   [CodeBuild, AWS Device Farm, Jenkins, BlazeMeter, Ghost Inspector UI testing, MF StormRunner Load, Runscope API monitoring]
+
+ Related to artifacts produced from a build:
+ - Need to brush up on S3 ACL, server side encryption etc.
+ - Also, there is a service called AWS Artifacts, that has nothing to do with the artifacts produced from a build stage - its just a compliance-kind of service from AWS.
+
+
+Deployment strategies :
+	1. Single target deployment : 
+		- we build stuff and deploy it to a single server.
+		- rollback involves removing the new version and installing the previous version.
+		- brief outage occurs during installation.
+	2. All-at-once deploment : 
+		- built stuff is deployed to all target servers.
+		- downtime can be expected.
+		- rollback is generally possible in case of failures.
+	3. Minimum in-service deployment :
+		- we specify the minimum number of servers that have to be always kept running.
+		- the system tries to deploy to max number of servers, noting that always the minimum count is maintained.
+		- often quicker and lesser stages than rolling deployment.
+	4. Rolling deployment :
+		- at each stage, the user-defined amount of services are updated with the new application version.
+		- overall applicable health is not necessarily maintained.
+		- generally no downtime, assuming num of targets per run is not large enough to impact the application.
+	5. Blue Green deployment :
+		- we deploy an entire new environment, containing the new application version.
+		- Once the green environment is ready, we switch the entire traffic to the blue env. If any error occurs we can revert the traffic back to blue environment.
+		- In case of this, there is no split in traffic, and the entire traffic is shifted from blue to green env.
+		- multiple environments only exist during the time of deployment and the second env is teared down after successful deployment.
+		Note : RED BLACK deployment is the same thing. Its just what Netflix calls it.
+	6. Canary deployment :
+		- Here, both blue and green environments receive traffic at the same time.
+		- The traffic is diverted to new environment and the percentage is increased little by little.
+		- Can be implemented in AWS using Route53 - weighted Round robin.
+		Note : this is the same method used in A/B testing, so that we can determine which application version users respond to etc.
+
+Domain 02 : Infrastructure as Code and Configuration Management :
+
+CloudFormation 
+ - Stack
+ - Template
+ - Stack Policy : IAM style policy statement which governs what can be changed and who can change it.
+
+Template anatomy :
+	-> Parameters 	: Allow the passing of variables into the template via the UI, CLI or API. e.g.: instance type
+	-> Mapping 	: Allow processing of hashes (arrays of key/value pairs) by the template.  e.g : instance AMIs to use for a particular region.
+	-> Resources	: where your actual resources are declared.
+	-> Outputs	: results from the template.
+
+When and where to use CloudFormation?
+	- To deploy infra rather than doing it manually.
+	- To create a patterned environment.
+	- To run automated testing for CI/CD environments. Create a clean environment, inject your code, run tests, produce results, then delete the test env; all with no human input.
+	- To define an env at once, and have it deployed to any region without reconfiguration.
+	- To manage infra configuration using s/w development style versioning and code repos such as git.
+
+	- KEY LEARNING - A template should designed so that its equally suitable for 1, 100, or 1000 applications in one or more regions.
+	  Basically, it means that reduce the use of variables and let CloudFormation auto-generate variable names. e.g. for VPC IDs, S3 bucket names etc so that 
+	  its always compatible with other stacks.
+
+
+Intrinsic functions
+	- functions to assist in assigning values to template properties that are not available until runtime.
+	  e.g : Ref, GetAttr, If, And, Equals etc.
+
+
+CloudFormation Wait Conditions :
+DependsOn
+	- Used for controlling creation order with CloudFormation.
+	- However, we cannot be sure that the resource is ready. for e.g : even if ec2 instance is up and running, it may not have finished executing user data scripts.
+
+We have few ways to handle this :
+	1. Creation policies :
+		- will prevent a resource status from reaching CREATE_COMPLETE until AWS CloudFormation receives a specified number of success signals or the timeout
+		period is exceeded.
+		- Creation policies can only be used by EC2 instances and autoscaling groups.
+
+	2. Wait conditions and handlers :
+		- allows you to coordinate stack resource creation with other configuration actions that are external to the stack.
+		- they are a resource with no properties which generates a signed URL which can be used to communicate SUCCESS or FAILURE.
+
+		WaitConditions have four components :
+		-> They DependOn on the resource(s) you are waiting on
+		-> A Handle property references that above handle
+		-> They have a response timeout
+		-> They have a count, if none is specified the default is 1.
+
+Nested stacks :
+ - In CloudFormation, there is a limit of 200 resources, 60 outputs and 60 parameters.
+ - we can overcome this using nested stacks.
+ - using nested stacks, an entire stack can be used as a resource.
+ - when using nested stacks, the template url must be an S3 url.
+
+Deletion policies :
+ - a setting which is associated with each resource in a CloudFormation template.
+ - a way to control what happens to each resource when the stack is deleted.
+ - can be :
+	-> delete - default
+	-> retain
+	-> snapshot
+
+Stack updates :
+When we issue a stack update, :
+ - First, the stack policy is checked & determined if we have permission to make change to the infrastructure.
+ - then changes are orchestrated.
+
+ - Once a stack policy is applied, all objects are protected by default and Update:* is denied.
+ - If we want to allow, update for any resource then we'll have to give the Effect:"Allow" for all resources with the action:"Update:*".
+
+There are 4 kinds of impacts a stack update can have on a resource:
+1. No interruption 	- if no change is made on the actual resource e.g dynamodb throughput being increased.
+2. Some interruption	- if a service has to be restarted. e.g : if we change the instance type of an ec2 instance.
+3. Replacement 		- if a resource has to be deleted and replaced with a new resource e.g : if we change the availability zone for an ec2 instance 
+4. Delete 		- if its deleted. duh
+
+CloudFormation Custom resources
+ - consists of :
+	-> Template developer
+	-> Custom resource provider
+	-> AWS CloudFormation
+
+The custom resource should provide a service token 
+e.g use case is : A Lambda function that checks for the latest AMI ID for building an ec2 instance.
+
+
+Elastic Beanstalk
+ - supports Java, .NET, PHP, Node.Js, Python, Ruby, Go and Docker.
+ - NOTE : Elastic Beanstalk uses CloudFormation behind-the-scenes to launch the resources.
+
+ebextensions-
+ - are used to manage the configuration of the systems/resources launched by elastic beanstalk.
+ - config files having extension .config are saved in a directory named '.ebextensions'
+
+AWS Config
+ - we can configure a bucket to store configuration history and configuration snapshot files.
+ - We can configure to stream configuration changes and notifications to SNS topic.
+ - Once the rules are setup, we can't actually delete those rules from the console - we can stop monitoring though. To delete them, we'll have to use the aws cli.
+
+AWS Lambda
+ - refer URL : https://docs.aws.amazon.com/lambda/latest/dg/lambda-services.html
+
+AWS Step Functions :
+ - we can use it to create logical flow type systems.
+ - still needs clarification.
+
+AWS OpsWorks :
+ - manage your application on aws and on-premise
+ - design layers that perform different functions - one layer could be the load balancer layer
+
+ -> Difference in using Chef as opposed to configuring it via userdata scripts would be that :
+	With Chef, we just need to provide what the end requirement is to be and it will automatically handle the "how" to achieve it.
+	for eg. if we want to install web server, we just say that a httpd server is to be installed and Chef will handle the installation.
+		in other words, we don't have to give the actual commands to do this. [Helpful when different instances have different OS and stuff]
+
+	- we can mention what packages to install
+	- what services to start/restart/stop.
+	- what files to copy to which location, where these files are provided by the cookbook.
+
+=======================================================================================================================================================================
+
+MONIORING & LOGGING
+
+AWS CloudWatch :
+ - Main point to remember would be the retention period for various metrics:
+	-> Data points < 60 seconds, will be retained for 3 hours (high resolution data)
+	-> Data points ~=60 seconds, will be retained for 15 days.
+	-> Data points ~=300 seconds (5 min) will be retained for 63 days.
+	-> Data points ~=3600 seconds(1 hour) will be retained for 445 days (15 months).
+
+ - Data points get aggregated after their retention period. So for example, high resolution data will be aggregated after 3 hours and 
+   average for 1 minute will be stored. After 15 days, this data will be further aggregated and average on 5 min will be stored. And so on..
+
+- If we want to view metrics aggregated over instances (for eg data over instance types), we need to enable enhanced monitoring.
+
+- Publishing custom metrics to CloudWatch is as simple as running an aws cli command : 
+  aws cloudwatch put-metric-data --metric-name metricName --namespace nameUnderWhichMetricShouldCome --value value --region eu-west-1
+
+
+CloudWatch Logs:
+ - to push logs from ec2 instances to CloudWatch logs:
+	- first download and install the amazon cloudwatch agent on the ec2 instance.
+	- we need to give a config file that mentions which files should be pushed to cloudwatch and under which cloudwatch log-group and log-stream.
+	- run command to setup cloudwatch agent, pointing to the config file we created above.
+  After this, the cloudwatch agent should handle pushing the log files that are to be tracked (according to the config file) to CloudWatch.
+
+AWS X-Ray:
+ - used to visualize the data transferred to and within the application.
+ - for eg. our web application might be receiving many requests, X-ray enables us to visualize and see which requests are failing.
+	say, the request for a particular image in the web app is failing, then we can trace this using x-ray.
+ - we need to use aws x-ray sdk in the underlying code, that supplies data to the x-ray service to build this visualization.
+
+
+
+=======================================================================================================================================================================
+
+Domain 04 : Policies and Standards Automation
+
+AWS Service Catalog:
+ - it enables organizations to create and manage catalogs of products that are approved for use on AWS.
+ - it has an API that provides programmatic control over all end-user actions as an alternative to using the AWS console.
+ - so we can create custom interface using this API and the developers never need to be provided access to the AWS console.
+
+ - it allows adiministrators to create and distribute application stacks called PRODUCTS.
+ - products can be grouped into folders called PORTFOLIOS.
+ - USERS can then launch and manage products themselves without requiring access to AWS services or AWS console.
+ - USERS can see only products they are supposed to see.
+
+AWS Trusted Advisor:
+ [refer attached image - trusted_advisor]
+
+AWS Systems Manager:
+can be used to:
+ - Run Command : run commands without logging into the instances.
+ - State Manager : manage configurations on the instances. eg. firewall settings, antivirus settings etc.
+ - Inventory: get an inventory of all the applications installed on the instances.
+ - Maintenance window : schedule a time for administrative tasks.
+ - Patch Manager : select and deploy OS & s/w packages automatically across instances
+ - Automation : automate commonly repeated IT tasks.
+ - Parameter store : used to store secrets and separate them from code.
+
+AWS Organizations:
+ - used to manage multiple aws accounts and manage Service Control Policies to these accounts.
+ - all services are enabled on the master account - irrespective of what SCP is attached to it.
+ - an SCP applied to an Orgnanizational Unit is applied to all accounts in that OU and all child-OUs.
+ - if we disable an action in the SCP, it doesn't matter if IAM permits it - it won't be accessible.
+
+AWS Secrets Manager:
+ - used to store credentials and other secrets in a central repo.
+ - We can get the credentials using an API call.
+ - secrets are encrypted at rest using your own encryption keys stored in KMS.
+ - secrets can be rotated automatically according to our schedule.
+ - a lambda function is created to do the secret rotation.
+
+Amazon Macie:
+ - AI to notify us about potential sensitive data in our aws account.
+
+AWS Certificate Manager
+ - used to centrally manage SSL/TLS certificates for our aws account.
+ - we can request certificates to be issued by giving our domain name, it usually takes 72 hours to verify.
+ - we'll have to insert the CNAME it gives to our Route53 domain for it to get verified.
+
+======================================================================================================================================================================
+
+DOMAIN 05 : Incident and Event Response
+
+AWS GuardDuty:
+ - monitors resources to check for any security breaches, based on data access activity. eg. check if any phishing is occuring, 
+ - it reads VPC flow logs, CloudTrail API events, and DNS logs to search for anything suspicious.
+
+Amazon Inspector:
+ - monitors ec2 instances and generates a report of the vulnerabilities in network accessibility to the instance.
+
+Amazon Kinesis:
+ - Kinesis Data analytics: Analyzing streaming data using SQL
+ - Kinesis Data Firehose : Deliver streaming data to another AWS service eg. s3
+ - Kinesis Data streams  : Collect streaming data, then do things with it. eg. collect logs and do stuff
+ - Kinesis Video streams : Collect streaming video, then do things with it. eg. traffic camera alerts
+
+Always look at the scale at which the question aims for streaming logs. Kinesis data streams is aimed for huge scale of logs to be streamed.
+If just one or two files are to be streamed OR if cost is a concern, go for CloudWatch Logs.
+
+======================================================================================================================================================================
+
+DOMAIN 06 : High Availability, Fault Tolerance and Disaster Recovery
+
+AWS Single Sign on : provides compatibility with MS Active Directory.
+
+CloudFront
+
+AutoScaling Lifecycle hooks
+
+1. Autoscaling responds to a scale out event by launching an instance.
+2. Autoscaling puts the instance into the Pending:wait state.
+3. Autoscaling sends a message to the notification target defined for the hook, along with the information and a token.
+4. Waits until you tell it to continue or the timeout ends.
+5. You can now perform your custom action, install software etc.
+6. By default, the instance will wait for an hour and will change state to Pending:proceed, then it will enter the in-service state. (but this time can be changed)
+
+Cooldown period and custom action in ASG
+When an Auto Scaling group launches or terminates an instance due to a simple scaling policy, a cooldown takes effect. 
+The cooldown period helps ensure that the Auto Scaling group does not launch or terminate more instances than needed.
+
+-> Consider an Auto Scaling group with a lifecycle hook that supports a custom action at instance launch. 
+-> When the application experiences an increase in demand, the group launches instances to add capacity. 
+-> Because there is a lifecycle hook, the instance is put into the Pending:Wait state, which means that it is not available to handle traffic yet. 
+-> When the instance enters the wait state, scaling actions due to simple scaling policies are suspended. 
+-> When the instance enters the InService state, the cooldown period starts. 
+-> When the cooldown period expires, any suspended scaling actions resume.
+
+Note :
+ - we can change the heartbeat timeout or you can define it when you create the lifecycle hook in the CLI with the heartbeat-timeout parameter.
+ - you can call the complete-lifecycle-action command to tell the auto-scaling group to proceed.
+ - you can call the record-lifecycle-action-heartbeat command to add more time to the timeout.
+ - 48 hours is the maximum we can a instance in wait state, regardless of heartbeats.
+
+ - Cooldowns ensure ASG doesn't add launch/terminate more instances than needed.
+ - Cooldowns start when instance enters the inService state, so if an instance if left in the Pending:wait as you perform functions on it, Autoscaling will still
+   wait before adding any more additional servers.
+
+ - At the conclusion of a lifecycle hook, an instance can result in one of the two states : ABANDON or CONTINUE.
+ - Abandon will cause Autoscaling to terminate the instance and if necessary launch a new one.
+ - Continue will put the instance into service.
+
+ - We can use lifecycle hooks with SPOT INSTANCES.
+ - This does not prevent the instance from being terminated during a change in SPOT PRICE.
+ - Even when the spot instance terminates, you must still complete the lifecycle action.
+
+Route53:
+ routing policies :
+ - Failover routing policy
+ - Geolocation routing policy  : routing based on location of user.
+ - Geoproximity routing policy : routing based on location of your resources, and optionally shift from resources in one location to another.
+ - Latency routing policy
+ - Multivalue answer routing policy : randomly route to either of the listed destinations (upto 8 destinations).
+ - Weighted routing policy
+
+RDS:
+ - refer attached image [rds_scaling]
+
+Amazon Aurora:
+ - 5X throughput of MySQL running on same hardware
+ - compatible with MySql 5.7
+ - storage is fault tolerant and self healing
+ - disk failures are repaired in background
+ - detects crashes and restarts
+ - no crash recovery or cache rebuilding required
+ - automatic failover to one of up to 15 read replicas
+ - storage auto scaling from 10GB to 64TB
+
+ Backups
+ - automatic, continous, incremental
+ - point-in-time restore within a second
+ - upto	35 day retention period
+ - stored in s3
+ - no impact on database performance
+
+ Snapshots
+ - user initiated snapshots are stored in s3.
+ - kept until you explicitly delete them
+ - incremental
+
+ Database failure
+ - 6 copies of your data are kept
+ - transparently handles loss
+ - can lose 2 copies of data without affecting write
+ - can lose 3 copies of data without affecting read
+ - storage is self-healing
+
+Two types of replicas:
+ Amazon Aurora replicas
+ 	- shares underlying volume with the primary instance
+ 	- updates made by primary are visible to all replicas
+	- upto 15 Amazon Aurora replicas can be made
+	- low performance impact on primary
+	- Replica can be a failover target with no data loss
+
+ MySql Read Replicas
+	- Primary instance data is replayed on your replica as transactions
+	- upto 5
+	- High performance impact on primary
+	- Replica can be failover target with potentially minutes of data loss
+
+ Security
+ - All aurora instances must be created in a VPC
+ - SSL used to secure data in transit
+ - you can encrypt databases using AWS Key Management Service
+ - Encrypted storage, backups, snapshots, replicas
+
+ => You can't encrypt an existing unencrypted database. We'll have to create a new database with encryption enabled and migrate data to it.
+
+
+DynamoDB:
+ Write Capactiy units : number of 1KB blocks per second
+ Read Capacity units : number of 4KB blocks per second
+
+ DynamoDB stores items in different partitions based on a hash function on the partition key.
+
+
+==========================================================================================================================
+
+Other things to know about :
+
+Tags:
+ - we can use tags in IAM, to ensure access based on the tags on the resource.
+   for eg. to restrict access to start or stop an ec2 instance based on whether the logged in user created the ec2 instance,
+   we can create an IAM policy that has a condition on the StartInstance and StopInstance action that the tag 'createdBy'
+   equals the username of the currently logged in user.
+ - can also be used for Cost Allocation Tags
+
+Elastic File system:
+ - mounted to Linux machines via NFS
+ - offers encryption at rest and in transit
+ - IMPORTANTLY : we can mount EFS to on-premise servers [so we can use this to get data in and out of our VPC]
+ - Automatically grow and shrink based on your storage usage.
+
+  It has two performance modes :
+	- General purpose :
+		- ideal for latency sensitive cases
+		- websites
+		- content management
+		- home directories
+
+	- Max I/O
+		- scales to high level of aggregate throughput
+		- slightly higher latency
+		- ideal of parellelized applications such as big data analysis, media processing
+
+  It has two storage classes:
+	- Standard:
+		- greate for frequently accessed files.
+	- EFS IA:
+		- infrequent access
+		- ideal for long lived files that aren't accessed often
+		- reduced storage costs.
+
+
+ElastiCache:
+ - used to speed up applications by using in-memory store, such as Redis/Memcached.
+
+S3 Glacier:
+ - see archive? use Glacier 
+ - retrieval :
+	Free-tier only : upto 10GB retrieval is free - but we can't say the rate at which it should be retrieved.
+	Max retrieval rate : we can set the rate at which it should be retrieved - so cost will be based upon the rate.
+	No retrieval limit : data retrieval cost will vary based on usage.
+
+
+AWS Direct Conntect :
+ - establishes a dedicated network connection from your premises to AWS WITHOUT THE INTERNET.
+ - consistent network performance
+ - provides 1 Gbps and 10 Gbps connections
+ - can use multiple connections if we need more capacity.
+ - privately connect to VPC
+ - reduce bandwidth costs, since no internet is required.
+ - compatible with all AWS services.
+
+ => will take upto 72 hours for aws to review your request and provision the port for your connection.
+
+
+AWS Lambda Dead Letter queues:
+[refer attached image]
+
+Amazon CloudSearch:
+ - managed service that makes it simple and cost-effective to setup, manage and scale a search solution for our application.
+
+ - simple : point a sample of data at CloudSearch and it will recommend how to configure your search domain.
+ - scalable:
+ - reliable: supports multi-AZ mode, updates are automatically installed.
+ - high performance: low latency and high throughput with automatic sharding and horizontal and vertical scaling.
+
+ElasticSearch service
+ - ELK stack
+ - ElasticSearch : distributed search and analytics engine.
+ - LogStash 	 : data ingestion tool that allows you to collect data from a variety of sources, transform it and send it to desired destination.
+ - Kibana	 : data visualization and exploration tool for reviewing logs and events.
+
+DynamoDB Accelerator (DAX):
+ - fully managed, in-memory cache for DynamoDB.
+ - no application logic modifications required.
+ - milliseconds become microseconds.
+ - compatible with existing DynamoDB API calls.
+ - enable it with just few clicks.
+
+AWS Server Migration Service:
+ - automates the migration of on-premise VMware vSphere or Microsoft Hyper-V virtual machines to AWS cloud.
+ - automatically replicate volumes
+ - automatically create new AMIs.
+ - orchestrate multi-server migrations
+ - test migrations incrementally
+ - minimize downtime
+ - supports Windows and several major Linux distributions.
+ - 
+
+
+Opsworks Lifecycle events :
+
+1. Setup -> occurs after an instance finished booting up. (can also be manually run using command) 
+	  - all userdata setup kind of stuff can be done here.
+	  - instance is not in-service until Setup event is finished.
+
+2. Configure -> occurs on all instances when one of the following happens : (can also be manually run)
+			- an instance enters or leaves the online state.
+			- you associate or disassociate an Elastic IP with an instance.
+			- you attach or detach an ELB from a layer.
+
+3. Deploy -> occurs when you run a deploy command, typically to deploy an application to a set of application-server instances.
+		- deploy event occurs immediately after a Setup event.
+
+4. Undeploy -> occurs when you delete an app (or run an undeploy command).
+		- can be used to remove all application versions and any other cleanup.
+		
+5. Shutdown -> occurs when after you direct an OpsWorks stacks to shutdown an instance, but just before the instance is shutdown.
+		- we can run recipes to perform any cleanup tasks like shutting down services.
+
+
+NOTE:
+Starting or stopping a large number of instances at the same time can rapidly generate a large number of Configure events. 
+To avoid unnecessary processing, AWS OpsWorks Stacks responds to only the last event. 
+That event's stack configuration and deployment attributes contain all the information required to update the stack's 
+instances for the entire set of changes. 
+This eliminates the need to also process the earlier Configure events. 
+AWS OpsWorks Stacks labels the unprocessed Configure events as superseded.

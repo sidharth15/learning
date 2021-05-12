@@ -1,0 +1,65 @@
+To mount a volume to an ec2 instance (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html):
+
+1. lsblk
+	- this lists all the storage devices attached to the instance.
+	- there should be a storage device named 'xvda'; which is the root volume.
+	- and then there should also be the volume we just attached. (possibly xvdf - could be anything in xvd[f to p])
+
+2. The prefix /dev/ must be missing when you do the lsblk command. Make sure to specify the full name: /dev/xvdf
+
+3. sudo file -s /dev/xvdf
+
+	- If its a fresh new volume that we attached, it will have no file system and on executing the above command,
+	  it will just show 'data'.
+	
+	- If it was restored from a snapshot, then it will have a Filesystem.
+
+	- ONLY if its a fresh new volume, we need to format it and create a filesystem.
+
+4. sudo mkfs -t xfs /dev/xvdf
+
+	- This will format the volume using the xfs file system (I think?).
+	- If you get an error that mkfs.xfs is not found, 
+	  use the following command to install the XFS tools and then repeat the previous command:
+
+		sudo yum install xfsprogs
+
+5. Now make a directory where you want this volume to be mounted at. So, 
+	
+	sudo mkdir /data
+
+6. ...AND mount it.
+
+	sudo mount /dev/xvdf /data
+
+
+Now, even though have properly mounted the volume, after reboot, this will be lost. So, to make it persistent, here's what
+we do:
+
+1. Add an entry for this new volume in the /etc/fstab file.
+   Before editing the file, first create a copy of it:
+
+	sudo cp /etc/fstab /etc/fstab.orig
+
+2. sudo blkid
+
+	- This will give us the UUID of the devices.
+	  Copy this UUID.
+
+  (For Ubuntu 18.04 use the lsblk command:	sudo lbslk -o +UUID	)
+
+3. Open the /etc/fstab file and add the following line:
+
+	UUID=aebf131c-6957-451e-8d34-ec978d9581ae  /data  xfs  defaults,nofail  0  2
+
+	/data -> the directory where we're mounting the device.
+
+4. IMPORTANT: If there is something wrong in the /etc/fstab file after us editing it, the instance won't be able to reboot.
+ 	      So, it's crucial to make sure that the file is correct.
+
+	We can do that by manually unmounting the volume and executing a command to mount all volumes.
+
+	sudo umount /data
+	sudo mount -a
+
+	if this command executes without any errors, then VOILA ! You've done it.

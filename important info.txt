@@ -1,0 +1,84 @@
+1. to find out os in linux : cat /etc/os-release
+
+2. to find details on filesystem : df -h
+
+3. to find the return value (exit status) of the last executed command : echo $?
+
+4. to get process monitor in terminal - 'top'
+
+5. sftp -i keyfile -P portnumber user@host
+
+6. #change local working directory
+	sftp lcd <local-current-directory>  ==> where the files will be downloaded to
+
+7. #download file from remote
+	sftp get filename
+
+8. don't know what this command does
+	dd if=/dev/zero of=/dev/null
+
+9. gives the details on the records of the website;
+	dig <dns or website address>
+
+10. which ports are open or something :
+	netstat ntlp
+
+11. list which package provides a particular software
+	whatprovides g++
+
+12. symlink - to start an application on boot.
+
+13. to download a file from remote in sftp
+	get <filename>
+
+14. to upload a file to remote in sftp
+	put <filename>
+
+=> here the <filename> file is present in the working directory of the remote/local
+
+15. to view remote working directory 
+	pwd
+
+16. to view local working directory
+	lpwd
+
+17. to change local working directory
+	lcd <directory-path>
+
+18. to change password of user in linux
+	sudo passwd <username>
+
+19. to find the application listening on a specific port in linux:
+	netstat -ltnp | grep 'port_num'
+
+20. to provide write access to a user to a specific directory: 
+
+    If you want to change the user owning this file or directory (folder), 
+    you will have to use the command chown. For instance, if you run:
+
+	sudo chown username: myfolder
+
+    the user owning myfolder will be username. Then you can execute:
+
+	sudo chmod u+w myfolder
+
+21. Get the list of users:
+	getent passwd
+
+22. to get the size of a file or directory:
+	du -sh foldername
+
+23. to add a user to a usergroup:
+
+	sudo usermod -a -G <some_group> <some_user>
+
+24. to change the group owner of a directory:
+
+	sudo chgrp -R <some_group> /var/www
+
+25. to add write access for a group to a directory:
+
+	sudo chmod -R g+w /var/www
+
+26. generate public key from private key:
+	ssh-keygen -y -f privatekey.pem > key.pub

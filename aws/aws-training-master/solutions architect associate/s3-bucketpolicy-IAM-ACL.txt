@@ -1,0 +1,123 @@
+Difference between S3 bucket policies,IAM policies and Access Control Lists
+
+S3 bucket policies :
+
+ - attached to S3 buckets
+
+ - just applicable for S3 buckets and its contents
+
+ - consists of 'principal'element
+ - which specifies the list of principals(users/roles/groups) to whom the statement
+ is applicable.
+
+
+   For eg :
+
+		{
+
+ 		 "Version": "2012-10-17",
+
+		  "Statement": [
+
+		    {
+
+		      "Effect": "Allow",
+
+		      "Principal": {
+
+		        "AWS": ["arn:aws:iam::111122223333:user/Alice",
+
+                	"arn:aws:iam::111122223333:root"]
+
+		       },
+
+		      "Action": "s3:*",
+
+		      "Resource": ["arn:aws:s3:::my_bucket",
+
+		                   "arn:aws:s3:::my_bucket/*"]
+
+		    }
+
+		  ]
+
+		}
+
+
+IAM policies :
+
+ - attached to IAM users/groups/roles.
+
+ - applicable to any aws resources.
+
+ - doesnt have a 'principal' element because whoever the policy is attached to IS the principal.
+
+
+   For eg :
+
+{
+  
+"Version": "2012-10-17",
+
+  "Statement":[
+{
+    "Effect": "Allow",
+
+    "Action": "s3:*",
+
+    "Resource": ["arn:aws:s3:::my_bucket",
+
+                 "arn:aws:s3:::my_bucket/*"]
+
+    }
+
+  ]
+}
+
+
+
+
+S3 ACLs:
+
+ - its a legacy access control mechanism
+
+ - it is applied to every S3 bucket and object.
+
+
+
+How does authorization work when multiple access control mechanisms are used?
+
+
+Whenever a principal issues a request to S3, the authorization depends on 
+the UNION of all IAM policies, 
+bucket policies and S3 ACLs that apply.
+
+
+In accordance with the principle of least-privilege, 
+decisions default to DENY and an explicit DENY 
+always trumps an ALLOW. 
+
+
+For example, if an IAM policy grants access to an object, the S3 bucket policies denies access to that 
+object, 
+and there is no S3 ACL, then access will be denied. 
+Similarly, if no method specifies an ALLOW, then the request 
+will be denied by default. 
+Only if no method specifies a DENY and one or more methods specify an ALLOW will the 
+request be allowed.
+
+
+
+An operation to an S3 object ----> Default decision = deny ----> Evaluate all applicable policies --->
+ 
+			   NO				      NO
+is there an explicit deny ----> else is there explicit allow ----> Default deny
+|				   |
+	  
+| YES				   | YES
+	  
+|				   |
+	  
+V				   V
+	
+Deny				 Allow 

@@ -1,0 +1,145 @@
+var guruEnvironmentConfigObject = {
+    stage: 'production',
+    commitHash: '7b79a0dede2491f74509e6ce885e15a38a660fec',
+    buildNumber: '1321',
+    uniqueBundleIdentifier: '1321_7b79a0dede2491f74509e6ce885e15a38a660fec',
+
+    // promotions
+    'defaultPromotion': 'retail-pricing',
+
+    // Auth0
+    'auth0_domain': 'acloudguru.auth0.com',
+    'auth0_custom_domain': 'auth.acloud.guru',
+    'auth0_clientID': 'JGSrENLfEp0LIAHTHja671Sde0pu0Q0Z',
+
+    // Firebase
+    'firebase_url': 'https://acloudguru.firebaseio.com',
+
+    'features': {
+        'marketing': {
+            'schoolNumbers': '850,000',
+            'customers': '850k',
+            'countries': '181',
+            'youtube': '70k',
+            'twitter': '23k'
+        },
+        'payment': {
+            'paypal': true,
+            'creditcard': true
+        }
+    },
+    'braintree': {
+        plans: {
+            USD: {
+                annual: {
+                    braintreeId: '',
+                    name: 'Annual Member',
+                    savings: 'Save 34% *',
+                    price: {
+                        monthly: 19,
+                        billed: 228
+                    }
+                },
+                monthly: {
+                    braintreeId: '',
+                    name: 'Monthly Member',
+                    price: {
+                        monthly: 29,
+                        billed: 29
+                    }
+                }
+            },
+            EUR: {
+                annual: {
+                    braintreeId: '',
+                    name: 'Annual Member',
+                    savings: 'Save 34% *',
+                    price: {
+                        monthly: 19,
+                        billed: 228
+                    }
+                },
+                monthly: {
+                    braintreeId: '',
+                    name: 'Monthly Member',
+                    price: {
+                        monthly: 29,
+                        billed: 29
+                    }
+                }
+            },
+            GBP: {
+                annual: {
+                    braintreeId: '',
+                    name: 'Annual Member',
+                    savings: 'Save 34% *',
+                    price: {
+                        monthly: 19,
+                        billed: 228
+                    }
+                },
+                monthly: {
+                    braintreeId: '',
+                    name: 'Monthly Member',
+                    price: {
+                        monthly: 29,
+                        billed: 29
+                    }
+                }
+            }
+        },
+    },
+    'taxamo': {
+        acg_public_token: 'public_5jUG2H-6fZtquScSgT1bVlQjc0XmsMJsAjSyANT9gRI',
+        afg_public_token: 'public_AjEp6E7kzmJIqFA02pbAbpF1wt9yV4y1G0bUHlZx1Ac',
+        express_checkoutUrls: {
+            startOfUrl: 'https://dashboard.taxamo.com/checkout/index.html', // '?' + query goes inbetween
+            endOfUrl: '#/paypal_express_checkout'
+        }
+    },
+    'supported_currencies': ['USD', 'EUR', 'GBP'],
+    'default_currency': 'USD',
+    'default_country': 'US',
+    rolesNamespace: 'https://ns.acloud.guru/roles',
+    organisationIdNamespace: 'https://ns.acloud.guru/organisationId',
+    hubspot: {
+        formsUrl: 'https://forms.hubspot.com/uploads/form/v2',
+        portalId: '2992779',
+        registerFormId: 'ff65d031-0d02-48f8-a59c-b1e7ed7c1bc3',
+        awsThisWeekFormId: '86047f25-966b-4e0f-8cda-6804a3465982',
+    },
+    cloudinary: {
+        'no_image_url': 'https://public.acloud.guru/assets/profile-no-image.png',
+        'account': 'acloud-guru'
+    },
+    enableAngularDebugInfo: false,
+    angularticsDevMode: false,
+    algolia: {
+      'app_id': '2AQ0ZGWJ3U',
+      'search_only_api_key': 'bd07683ba0f90f58b2ea5def1ec0cc27',
+      'stage_prefix': 'prod_'
+    },
+
+    api: {
+        api: 'https://api.acloud.guru',
+        bff: 'https://prod-api.acloud.guru/bff',
+        course: 'https://prod-api.acloud.guru/course',
+        checkout: 'https://prod-api.acloud.guru/checkout',
+        forum: 'https://prod-api.acloud.guru/forum',
+        hubspot: 'https://prod-api.acloud.guru/hubspot',
+        analytics: "https://prod-api.acloud.guru/analytics",
+        studyPlanWidgetUrl: "https://prod-api.acloud.guru/study-plan-ui",
+        cloudProfileUrl: "https://production-internal-hire.acloud.guru/hire",
+        videoIssueReporterUrl: "https://prod-api.acloud.guru/video-issue-reporter",
+        membershipSettingsUrl: "https://membership.acloud.guru/settings",
+        membershipCheckoutUrl: "https://membership.acloud.guru/checkout"
+    },
+
+    bugsnagKey: '3aecb5d294c1c213eca57d741fb89188',
+    segmentKey: 'd7Uj61iZO2008XFUO21PmFbN3tcwixff',
+    splitioKey: 'ns9p4amquh8spofc0md17t9h5u0n9gcc4o7r',
+    teamsUrl: 'https://teams.acloud.guru',
+    learnUrl: 'https://learn.acloud.guru',
+    bernieUrl: 'https://bernie.acloud.guru',
+    contentAdminUrl: 'https://content-admin.acloud.guru'
+};
