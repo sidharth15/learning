@@ -82,3 +82,11 @@
 
 26. generate public key from private key:
 	ssh-keygen -y -f privatekey.pem > key.pub
+
+27. list packages in linux:
+	sudo yum list 
+
+	sudo yum list | grep <package-name>
+
+28. run command in background
+	add an & at the end

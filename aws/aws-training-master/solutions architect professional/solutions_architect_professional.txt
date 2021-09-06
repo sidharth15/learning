@@ -15,7 +15,7 @@ Anatomy of a IAM policy:
 	- Action (NotAction is also possible)
 	- Resource
 	- Condition
-	- Policy Variables (not sure what this is)
+	- Policy Variables (e.g ${aws.username})
 
 Access Advisor: See permissions granted and when last accessed.
 Access Analyzer: Analyse resources that are shared with an external entity. 
@@ -65,7 +65,7 @@ E.g: "Resource": ["arn:aws:s3::mybucket:${aws:username}"]
 IAM Roles VS Resource Based Policies
 
 Let's say a user in Account A wants to access an S3 bucket in Account B.
-Two ways of achieveing this:
+Two ways of achieving this:
 	1. We create a role in Account B that allows access to the S3 Bucket, and also allows user in Account A to assume
 	   this role. The user from Account A then assumes this role and accesses the S3 bucket.
 
@@ -125,13 +125,22 @@ Confused Deputy problem:
    API call fails when it enters the external-id of the attacker, instead of our external ID.
 
 STS Important APIs:
-	- AssumeRole: access a role in your account or cross-account.
-	- AssumeRoleWithSAML: return credentials for users logged with SAML.
+	- AssumeRole: access a role in your account or cross-account. (max 12 hours session duration)
+	- AssumeRoleWithSAML: return credentials for users logged with SAML. (max 12 hours)
 	- AssumeRoleWithWebIdentity: returns creds for users logged with IdP. like Cognito, Login with Amazon, FB, Google.
-	- GetSessionToken: for MFA, from a user or AWS account root user.
-	- GetFederationToken: obtain temporary creds for a federated user, usually a proxy app that will give the creds
-			      to a distributed app inside a corporate network.
+					(max 12 hours)
 
+	- GetSessionToken: for MFA, from a user or AWS account root user. (max 36 hours)
+	- GetFederationToken: obtain temporary creds for a federated user, usually a proxy app that will give the creds
+			      to a distributed app inside a corporate network. (max 36 hours)
+	Note: Both GetSessionToken and GetFederationToken can only be called using an IAM user, not with an assumed role.
+
+ - for all AssumeRole* APIs, its optional to pass a policy when calling it.
+ - for GetFederationToken, it's still optional - but if we don't pass it, then the resulting session has no permissions. 
+   And if we do pass it, the resulting session will get the intersection of the user's (who called the API)
+   and the policy we passed.
+ - for GetSessionToken - we cannot pass a role and the resulting credentials will have the same access as the user who 
+   called the API and created it.
 
 ##### !!! IMPORTANT !!! #####
 Identity Federation in AWS
@@ -208,7 +217,7 @@ Different ways of identity federation in AWS:
 	    accounts.google.com:sub
 
  Note: In general, when we need to setup an OIDC IdP in AWS, we have to create an Identity Provider under IAM.
-       But, for Google and Login through Amazon, AWS supports them natively. So need to set it up for them.
+       But, for Google and Login through Amazon, AWS supports them natively. So no need to set it up for them.
 
 Microsoft Active Directory (AD)
  - Basically a system which provides us with a data store for identities.
@@ -319,6 +328,8 @@ Service Control Policies:
 SCP is applied to ALL the Users and roles of the account, including Root of the account.
 However, SCP does not affect service-linked roles:
 	- Service linked-roles enable other AWS services to integrate with Organizations and can't be restricted by SCPs.
+	(I think service linked roles are nothing but the roles assigned to Service itself, not a resource - and this gives
+	 permissions to that service to call other AWS services on our behalf.)
 
  - SCP must have an explicit Allow (does not allow anything by default). So unless we give an explicit allow, services 
    cannot be accessed in the child accounts.
@@ -366,6 +377,15 @@ AWS Single Sign on
  - Centralized auditing with CloudTrail.
  - Integration with on-premise Active Directory.
 
+
+ Setting up SSO for AWS account:
+ - we'll be able to select the identity source: we can choose from AWS SSO Identity store, Active Directory or External 
+   Identity Provider.
+ - Assign access to the users or groups. The access is based on something called 'permission sets' - which are provisioned
+   into the AWS accounts as IAM roles.
+ - End-users will be able to see the permission sets assigned to them upon login. (They will see this as roles - This is
+   exactly how it's implemented for us in PHILIPS)
+ - When we add SSO access to our AWS account, AWS SSO creates an IAM Identity Provider in each AWS account in the org.
 
 Setting up SSO with AD - refer images/iam_13
 Why SSO vs AssumeRoleWithSAML? - refer images/iam_14
@@ -471,6 +491,12 @@ AWS Secrets Manager:
 
  - Mostly this service can be used for RDS integration.
 
+ Parameter Store vs Secrets Manager
+ - Encryption is optional in Parameter Store, mandatory in Secrets Manager.
+ - Parameter Store is free, allows upto 10,000 parameters. Secrets Manager is paid $0.4 per secret.
+ - Secrets Manager can rotate secrets and also update the new secrets in RDS for e.g
+ - For custom use cases, Secrets Manager can be linked with a lambda function to do the secret update process.
+
 ###########################################################################################################################
 
 RDS - Security
@@ -573,9 +599,15 @@ There are 4 methods of encrypting objects in S3:
 	1. SSE-S3: encrypts objects using keys handled and managed by AWS.
 
 	2. SSE-KMS: we leverage KMS and our own KMS keys to manage encryption.
+		    In this case, only the users authorized to access the CMKs in KMS can access the object in S3 as well.
 		    Here, access pattern of the keys in KMS is available using CloudTrail.
 
 	3. SSE-C: when we want to manage our own keys, as done in CloudHSM.
+		  We supply our own customer managed key along with the object when we put it to S3.
+		  S3 encrypts the object using this key, stores the object, creates a hash of the key and deletes the key
+		  itself.
+		  So on a request to access the object, S3 will check if the key passed is the same as the old one using 
+		  this hash.
 
 	4. Client-side encryption: S3 doesn't even know it's encrypted, we encrypt and send it - download and decrypt it.
 
@@ -647,6 +679,18 @@ S3 Object Lock
  - WORM (Write Once Read Many)
  - So once written, we can't delete it.
  - Mainly use it for compliance stuff.
+ - we can use either:
+	-> retention period: the number of days to which the object should be locked. minimum of 1 day and no max limit.
+	-> legal hold: when we're not sure for how many days we need to keep the object locked. object cannot be updated or
+		       deleted until the legal hold has been lifted.
+
+ - Two modes:
+	-> Governance mode: even if the object is locked, it can be updated/deleted by users with special permission.
+			    (s3:BypassGovernanceRetention)
+	-> Compliance mode: once applied, the object cannot be modified by ANYONE (including the root user) until the
+			    retention period is finished. 
+			    To delete the object during the retention period, we'll have to delete the entire 
+			    AWS Account. (damn son)
 
 Glacier Vault Lock
  - same as S3 object lock, but here we can also put a lock on the policy itself, so we can never make the object deletable.
@@ -851,6 +895,10 @@ Auto Scaling
 	- simple/step scaling: increase/decrease capacity based on cloudwatch alarm.
 			       difference with Step scaling is that we can provide 'steps' that determine how many
 			       instances to add to the group depending on the size of the breach.
+				[what we mean by 'steps' is simply ranges of threshold breaches; so if the threshold is 60,
+				 we can have 60-70, 70-80 and 80-infinity as ranges. So then for each of these ranges, we
+				 specify how many instances to add. Similarly, we create a scale-in policy with another set
+				 of ranges.]
 			e.g: if CPU metric reached 60%, add one instance. If it reached 90%, add 3 instances.
 
 	- Target tracking: we specify the value at which to keep the target metric, say CPU. and auto scaling scales up or
@@ -1087,6 +1135,10 @@ Other Route 53 facts:
  - 3rd party registrar: If we buy the domain outside of AWS, we can still use Route 53 as the DNS provider. We just have to
 			update the NS records on the 3rd party registrar.
 
+ - IMPORTANT: We cannot create a CNAME record with the same as the hosted zone (the zone apex). Say our hostname is 
+	      'example.com'. Then we cannot create a CNAME that redirects 'example.com' to 'www.example.com'. For this, we
+	      we need to use an A-record.
+
  Route 53 health checks:
  - There are 3 types of health checks we can configure on Route 53:
 	=> Endpoint health check: 
@@ -1202,6 +1254,9 @@ https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html#solid-
 	- Cannot be used as boot volume.
 	- used for big data, data warehouses and log processing
 
+ IMPORTANT: Best way to determine which type of volume to use can be based on: 
+	-> whether we perform large, sequential I/O (EMR, logging purpose): use throughput optimized HDD (st1) in this case
+	-> or if perform small, random I/O : use gp2 in this case
 
  EBS RAID 0 (either) and RAID 1 (mirror)
  EBS Snapshots - better not to take snapshot when application is handling a lot of traffic - because snapshot consumes I/O.
@@ -1548,6 +1603,7 @@ RDS:
 
  Kinesis Data Streams:
  - Kinesis consumers: Kinesis Client Library refer: images/kinesis_1
+ - has retention period by default of 1 day and max of 365 days! 
 
  Kinesis Firehose:
  - Near real time (60 seconds latency minimum for non full batches)
@@ -1708,6 +1764,19 @@ CloudWatch:
  CloudWatch Metrics:
  - for AWS service metrics: standard monitoring has granularity of 5 min. Detailed monitoring has 1 min granularity.
  - for custom metrics: standard resolution is 1 minute; high resolution 1 second.
+
+ - Data points with a period of less than 60 seconds are available for 3 hours. 
+   These data points are high-resolution custom metrics.
+ - Data points with a period of 60 seconds (1 minute) are available for 15 days
+ - Data points with a period of 300 seconds (5 minute) are available for 63 days 
+ - Data points with a period of 3600 seconds (1 hour) are available for 455 days (15 months)
+ - Data points that are initially published with a shorter period are aggregated together for long-term storage. 
+   For example, if you collect data using a period of 1 minute, the data remains available for 15 days with 1-minute 
+   resolution. 
+   After 15 days this data is still available, but is aggregated and is retrievable only with a resolution of 5 minutes. 
+   After 63 days, the data is further aggregated and is available with a resolution of 1 hour. 
+   If you need availability of metrics longer than these periods, you can use the GetMetricStatistics API to retrieve the 
+   datapoints for offline or different storage.
  
  CloudWatch Alarms: (refer images/cloudwatch_1)
  - can trigger actions: EC2 action (reboot, stop, terminate, recover), AutoScaling, SNS
@@ -1725,6 +1794,26 @@ CloudWatch:
 	- Orchestration: Step functions, CodePipeline, CodeBuild.
 	- Integration: SQS, SNS, Kinesis Streams, Kinesis Firehose.
 	- Maintenance: SSM, EC2 Actions
+
+ - IMPORTANT: If we want to send events to cross-account to an event bus, then we need to the following:
+	1. In the receiver account, add permission on the default event bus (or any event bus) for the sender account to 
+	   send events. (This can be done either by adding permissions to the specific account id of the sender account OR
+	   we can add permission to all accounts in the organization.)
+
+	2. In the sender account, create an event rule, with the target as the arn of the event bus in the receiver account
+	   While creating this rule, we need to specify an IAM role that gives the rule permission to put events to the 
+	   cross-account event bus (this is only needed if, in the receiver account, we specified permissions for accounts
+	   in the whole organization - we don't need to specify an IAM role if we specifically gave permission to the 
+	   sender account id.)
+
+	3. In the receiver account, we can now create a rule to match the event that's being sent from the sender account.
+	   Say, if we're sending EC2:terminate events from the sender account, we can then match the same event at the 
+	   receiver account as well. Also note that when we create this rule, if we don't specify the 'account' of the 
+	   event in the rule, then ALL EC2:terminate events from ALL accounts (including the events created from the
+	   receiver account itself) will be matched in this rule.
+
+   (Cross-region events also works the same, except we don't have to put the permission on the receiver-event-bus - since
+    they're both in the same aws account.)
 
  CloudWatch Logs - Sources:
  1. SDK, CloudWatch Logs Agent, CloudWatch Unified Agent
@@ -2654,7 +2743,7 @@ CloudWatch:
  - more expensive than a VPN (duh)
  - private access to AWS services through a VIF (public VIF to be precise).
  - With Direct Connect, we can bypass ISP, reduce network cost, increase bandwidth and stability.
- - its not reundant by default, we need to setup a failover DX or VPN.
+ - its not redundant by default, we need to setup a failover DX or VPN.
 
  Direct Connect VIF (Virtual Interfaces):
  - Public VIF: to connect to public AWS service endpoints (S3, Glacier, EC2 etc.)

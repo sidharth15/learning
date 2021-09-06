@@ -1,0 +1,4 @@
+AWS tools:
+https://aws.amazon.com/premiumsupport/knowledge-center/lambda-eni-find-delete/
+
+GitHub repo: git clone https://github.com/awslabs/aws-support-tools.git
