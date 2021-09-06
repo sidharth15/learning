@@ -1,0 +1,56 @@
+HOW PROPAGATION WORKS IN PCP:
+
+- SIDHARTH RAMESH
+- ALLEN BOBY
+
+ChangedCache():
+ - handles link maintenance using CanonicalLinkMaintainer.
+ - also handles adding/updating entries in canonical_propagation table, using PropagationService.
+ - PropagationService - all it does is add two items for the object_id#context of the modified item, one 'forward' and one 'backward'.
+ 
+
+CanonicalLinkMaintainer:70 
+ We are updating the links' update_id before deleting them, but is that necessary? Because ChangedLink anyway handles just that.
+
+ChangedLink():
+ - only acts when a link is deleted.
+ - updates the update_id on the FromEntity and ToEntity of the link.
+
+ChangedPropagationRouter():
+ - has a trigger on canonical_propagation table and inserts records into canonical_changedpropagationrouter_stream
+ - from the canonical_changedpropagationrouter_stream -> the lambda canonical_changedpropagationsplitter reads and processes items.
+ 
+ChangedPropagationSplitter():
+ - This lambda looks at the modified canonical_propagation item:
+	1. For a newly created propagation entry:
+		-> It will load all links which have the fromId == objectId of the modified-propagation item with direction = FORWARD.
+			(So this gives us the items which ARE REFERENCING THE MODIFIED PROPAGATION ITEM.)
+			
+		-> It will load all links which have the toId == objectId of the modified-propagation item with direction = BACKWARD.
+			(So this gives us the items that ARE REFERENCED BY THE MODIFIED PROPAGATION ITEM.)
+		-> From these links, except for those which have 'noPropagation'=true, all others are put into the kinesis stream canonical_changedpropagationsplitter_stream.
+		
+	2. For a modified propagation entry:
+		-> we check if the update_id is modified for the propagation entry (Right now, I think this is meaningless, as the only modifiable attribute in canonical_propagation IS its update_id)
+		
+		-> then if the update_id is modified (I think it always WILL be modified), then we check if the propagation item has a more recent update in the table.
+		   This check avoids additional processing in case the same propagation item has another update as the first-update is being processed.
+		   So, the method isMostRecentPropagation() fetches the propagation item from the table and checks if the entity read from the stream is indeed the most recent or not.
+			8:12 -> 8:13
+			8:13 -> 8:14
+
+			1st record: oldEntity[812] newEntity[813]
+			2nd record: oldEntity[813] newEntity[814]
+
+			lambda will receive: oldEntity[812] newEntity[813]
+		
+		-> the most recent propagation item is then used to look up all links and the linkEntity+propagationEntity is put into the kinesis stream
+		   canonical_changedpropagationsplitter_stream.
+		   
+	3. For a deleted entry, do nothing.
+	
+	
+ChangedPropagation():
+ - Finally, the changedPropagation lambda function reads from the canonical_changedpropagationsplitter_stream and for each of the link entities it reads from the stream, it will:
+	1. create/update the item in the canonical_propagation table.
+	2. Update the actual entity in its respective canonical layer table.
