@@ -2,3 +2,10 @@ VPC:
  Public subnets will have a route to the internet gateway in its route table.
  In PCP infra, the 'ZONE1', 'ZONE2' and 'ZONE3' naming is really a way to classify the subnets as private or public.
  'ZONE1' - is a public subnet. The rest two are private subnets.
+ 
+Load balancers:
+  When creating an internet facing load balancers and putting private instances behind this load balancer:
+	- make sure there is a public subnet in the same availability zone as that of the instance in the private subnet.
+	- Since load balancers need to have internet access, while selecting subnets for each availability zone - we can 
+	  select this public subnet within each availability zone.
+	- Hence, the load balancer can communicate with the private instance(s).
