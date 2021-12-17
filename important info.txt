@@ -90,3 +90,6 @@
 
 28. run command in background
 	add an & at the end
+	
+29. list active services running in linux
+	systemctl list-units --type=service --state=running

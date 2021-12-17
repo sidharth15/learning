@@ -28,3 +28,16 @@ docker load -i <path to image tar file>
 
 # get a bash command line in a running container
 docker exec -it <container name> /bin/bash 
+
+# to skip confirmation prompts, use -f --force
+docker container prune -f
+
+# to get the container id from inside the container
+use the environment variable $HOSTNAME or cat /etc/hostname
+
+# to push logs to cloudwatch
+# this does not create a log-group by default
+docker run -d --log-driver=awslogs --log-opt awslogs-region=us-east-1 --log-opt awslogs-group=wordfreq_premium_container_logs -e CONTAINERS_TABLE_NAME="containers" wordfreq-app:latest
+
+# to create a log-group by default
+  --log-opt awslogs-create-group=true

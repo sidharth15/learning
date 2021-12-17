@@ -1,0 +1,8 @@
+1. CORS:
+ - CORS headers are to be included by the server.
+ - The server can whitelist the domains from which its resources can be accessed.
+ - So, if we have a website from domain A loaded in the browser and it tries to fetch a resource from domain B, then this will succeed only 
+	1. if domain B allows all origins to access its resources OR
+	2. if domain B has whitelisted domain A from cross-origin resource sharing.
+	
+ -  They don't protect the origin site, they protect the site receiving the cross origin requests. This is why the allowed origins are up to the targeted server.
