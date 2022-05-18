@@ -1,0 +1,49 @@
+Apache Spark has the following main components:
+ - Spark Core and RDDs: provides basic I/O, distributed task dispatching and scheduling.
+ - Spark SQL: component lying on top of Spark Core, introduces SchemaRDD. Supports SQL with ODBC/JDBC server and command-line interfaces.
+ - Spark Streaming: it leverages the fast scheduling capability of Spark Core, ingests data in small batches, and performs RDD transformations on them.
+ - MLlib: distributed machine learning framework on top of Spark.
+ 
+ 
+PySpark - Python API for Spark
+https://sparkbyexamples.com/pyspark-tutorial/
+
+Spark has a master-slave architecture, so whenever we run a Spark application, the master (Spark Driver) creates a "context" which is the entrypoint to the application, and all the actual operations (transformations and actions) are carried out on the worker nodes. The resources are managed by the Cluster Manager.
+
+	   Spark Driver		 =====> Cluster Manager =====> 	Worker Node
+  (creates Spark context)								task	task
+  
+  
+There are different cluster managers that can be used:
+Standalone, Apache Mesos, Hadoop YARN (most widely used) and Kubernetes
+
+=> If we use "local" as cluster manager to run Spark on our laptops.
+
+
+Setting up Spark:
+1. Install Java
+	sudo amazon-linux-extras install java-openjdk11
+	
+2. Install Scala.
+	curl -fL https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz | gzip -d > cs && chmod +x cs && ./cs setup
+	
+3. Install anaconda
+	Prerequisites: yum install libXcomposite libXcursor libXi libXtst libXrandr alsa-lib mesa-libEGL libXdamage mesa-libGL libXScrnSaver
+	
+	Installation steps: https://docs.anaconda.com/anaconda/install/linux/
+	
+	wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
+	bash Anaconda3-2022.05-Linux-x86_64.sh
+	Approve the steps and provide "yes" when asked about init.
+	
+4. Download and install Spark
+	wget https://dlcdn.apache.org/spark/spark-3.2.1/spark-3.2.1-bin-hadoop3.2.tgz
+	tar -zxvf spark-3.2.1-bin-hadoop3.2.tgz
+
+	export SPARK_HOME=/home/ec2-user/spark-3.2.1-bin-hadoop3.2
+	export PATH=$SPARK_HOME/bin:$PATH
+	export PYTHONPATH=$SPARK_HOME/python:$PYTHONPATH
+	
+When setting up Jupyter notebook on EC2, while running the "jupyter notebook" command, include a parameter "--ip=<EC2-public IP>".
+The best process in my opinion is to include this in a "start_jupyter.sh" script. 
+The above comands to set environment variables can also be included in this startup script.
