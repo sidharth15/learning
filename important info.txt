@@ -93,3 +93,6 @@
 	
 29. list active services running in linux
 	systemctl list-units --type=service --state=running
+	
+30. to know which package provides a particular functionality in amazon linux:
+	yum whatprovides '*bin/dig'

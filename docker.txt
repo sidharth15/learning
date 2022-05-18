@@ -41,3 +41,9 @@ docker run -d --log-driver=awslogs --log-opt awslogs-region=us-east-1 --log-opt 
 
 # to create a log-group by default
   --log-opt awslogs-create-group=true
+  
+# give permissions to a user to use docker without sudo - by adding them to the 'docker' usergroup
+	sudo usermod -aG docker $USER
+	
+# create the docker user group if not already created using:
+	sudo groupadd docker
