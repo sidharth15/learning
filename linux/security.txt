@@ -1,0 +1,45 @@
+1. how to read permissions of a file/folder in linux
+	ls -l
+
+	Linux files/folders have three types of ownership: 1. User 2. Group 3. Others
+	In the output of the above command, we can see permissions in the format: rwx (r-- => read only permission)
+	There will be 3 sets of these, indicating one for the user, one for the group and one for the public/others.
+	(there is also an additional one at the beginning of it - it just denotes if it's a directory or a symbolic link - stuff like that)
+	
+
+	There are 8 set of possible permission combinations - so these can be represented using numbers from 0-7.
+	This is like binary: so 0 => ---, 1 => --x, 2 => -w-, 3 => -wx, 4 => r--, 5 => r-x, 6 => rw-, 7 => rwx
+	We can think of this as a "binary mask" over rwx.
+
+	So when we set permissions for a file, we give these digits - but 3 times, each indicating the permissions for
+	the user, group and public. that's why "777" gives full rwx access to everyone.
+
+2. setting permissions using absolute mode
+	chmod 760 file_or_folder
+	
+3. setting permissions using symbolic mode
+
+	there are 3 operators to give access: 
+	"+": adds to existing permissions 
+	"-": removes from existing permissions 
+	"=": overrides and assigns onto existing permissions
+	
+	
+	we can specify the user, group and others using "u", "g" and "o" respectively.
+	
+	chmod u=rwx file_or_folder	# override existing permissions
+	
+	chmod u-r file_or_folder	# remove read permissions for user
+	
+4. Change ownership of a folder recursively
+
+	chown -R username:group directory
+	
+	# Just change the user and not the group using this:
+	chown -R username: directory
+	
+	
+	
+	
+
+
