@@ -47,3 +47,14 @@ Setting up Spark:
 When setting up Jupyter notebook on EC2, while running the "jupyter notebook" command, include a parameter "--ip=<EC2-public IP>".
 The best process in my opinion is to include this in a "start_jupyter.sh" script. 
 The above comands to set environment variables can also be included in this startup script.
+
+To startup spark, after setting the environment variables, type "pyspark" in the terminal.
+Spark also provides a web GUI, which can be accessed at port 4040 or 4041.
+
+Setting up history server for Spark:
+The logs location can be configured in SPARK_HOME/conf/spark-defaults.conf. 
+Whatever directory we give here needs to be created manually, otherwise it will throw a FileNotFoundException.
+A sample configuration is in the github repo.
+To start the history server, run $SPARK_HOME/sbin/start-history-server.sh
+Visit <url>:18080 to see the history server UI.
+
