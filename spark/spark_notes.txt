@@ -19,6 +19,7 @@ Standalone, Apache Mesos, Hadoop YARN (most widely used) and Kubernetes
 
 => If we use "local" as cluster manager to run Spark on our laptops.
 
+=====================================================================================================================================================================
 
 Setting up Spark:
 1. Install Java
@@ -58,3 +59,31 @@ A sample configuration is in the github repo.
 To start the history server, run $SPARK_HOME/sbin/start-history-server.sh
 Visit <url>:18080 to see the history server UI.
 
+=====================================================================================================================================================================
+
+Resilient Distributed Dataset (RDD): https://sparkbyexamples.com/pyspark-rdd/
+-> the basic building block of PySpark which is fault-tolerant, immutable distributed collection of objects.
+-> RDD divides the data among the different nodes available - so parallelism is really good.
+-> some of the basic operations on an RDD are: filter(), map(), persist() and pair RDD functions such as groupByKey(), join().
+-> Lazy evaluation: PySpark does not evaluate the transformations and instead it keeps all the transformations till it sees the first RDD action.
+-> By default, RDD partitions the elements to the number of cores available.
+
+There are two ways to create an RDD:
+	1. parallelizing an existing collection
+		for e.g., create an RDD from a Python list (as we did in the first PySpark script).
+		
+	2. Referencing a dataset in an external storage system (HDFS, S3 etc)
+	
+Code level instructions are found in the GitHub repo.
+
+Transformations and Actions
+
+- transformations are all evaluated lazily, so they are not actually executed until an Action is encountered.
+
+Examples for transformations: map(), flatMap(), reduceByKey(), sortByKey(), filter().
+Examples for actions: 
+count(), first(), max(), 
+reduce(), // accepts a function with which we can reduce all the records to a single - we can use this for count or sum
+take(),   // Returns the record specified as an argument.
+collect() // careful when using this with an RDD that contains huge amounts of data as we may run out of memory on the driver.
+saveAsTextFile()
