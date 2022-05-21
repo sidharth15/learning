@@ -79,6 +79,7 @@ Code level instructions are found in the GitHub repo.
 Transformations and Actions
 
 - transformations are all evaluated lazily, so they are not actually executed until an Action is encountered.
+- Actions return the values from an RDD to a driver program. Any RDD function that returns non-RDD is considered an action.
 
 Examples for transformations: map(), flatMap(), reduceByKey(), sortByKey(), filter().
 Examples for actions: 
@@ -87,3 +88,68 @@ reduce(), // accepts a function with which we can reduce all the records to a si
 take(),   // Returns the record specified as an argument.
 collect() // careful when using this with an RDD that contains huge amounts of data as we may run out of memory on the driver.
 saveAsTextFile()
+
+Shuffle operations:
+ - shuffle is a mechanism used to redistribute the data across different executors and even across machines.
+ - PySpark shuffling triggers when we perform certain transformation operations like groupByKey(), reduceByKey(), join() on RDDs.
+ - shuffle is an expensive operation, because it needs disk I/O, data serialization & deserialization AND network I/O.
+ 
+When we perform reduceByKey() operation, PySpark does the following
+
+1. PySpark first runs map tasks on all partitions which groups all values for a single key.
+2. The results of the map tasks are kept in memory.
+3. When results do not fit in memory, PySpark stores the data into a disk.
+4. PySpark shuffles the mapped data across partitions, some times it also stores the shuffled data into a disk for reuse when it needs to recalculate.
+5. Run the garbage collection
+6. Finally runs reduce tasks on each partition based on key.
+
+Having too many partitions for very few data is not good since we can end up with many partitioned files with less number of records in each partition, which results in many tasks to process less data.
+Vice versa, when we have too much data and very few partitions, it will result in longer running tasks and some times out of memory errors.
+
+ ========================================================================================================================
+||	Getting the right num of partitions is tricky: In case of performance issues in Spark, check the partitioning.		||
+ ========================================================================================================================
+ 
+ 
+Persistence and caching: https://blog.knoldus.com/understanding-persistence-in-apache-spark/
+
+ - To store the results after transformations on an RDD, we can make use of caching and persistence.
+ - With caching, it will always be in-memory of the worker nodes, whereas with persistence, we can store it in MEMORY_ONLY, MEMORY_AND_DISK, MEMORY_ONLY_SER,
+   MEMORY_AND_DISK_SER, DISK_ONLY, MEMORY_ONLY_2,MEMORY_AND_DISK_2
+   
+ - to understand the advantage of persistence, consider the example:
+		transformation			transformation
+   RDD1 ===============> RDD2 ===================> RDD3
+   
+   Now each time we do any kind of transformation on RDD3, RDD1 and RDD2 needs to be recomputed again.
+   But, if we had cached RDD3, it wouldn't need to recompute this all over.
+   
+ - Persistence levels:
+	Based on storage format:
+   1. MEMORY_ONLY			: everything in memory
+   2. DISK_ONLY				: everything in disk. useful if I/O to read/write this from disk is less expensive than recomputing
+   3. MEMORY_AND_DISK		: Stores partitions in disk which do not fit in-memory. Also called spilling.
+							  The data stored in disk is at /tmp.
+							  
+							  
+	Based on memory format:
+	
+	Here serialized means storing in binary format. This is more space-efficient, but has the added cost of deserializing the data.
+	
+   4. MEMORY_ONLY_SER		: serialized in-memory.
+   5. MEMORY_AND_DISK_SER	: serialized in-memory and disk.
+   
+   Based on partition replication:
+   These options stores a replicated copy of the RDD into some other Worker Node’s cache memory as well.
+   Replicated data on the disk will be used to recreate the partition i.e. it helps to recompute the RDD if the other worker node goes down.
+   
+   6. DISK_ONLY_2
+   7. MEMORY_AND_DISK_2
+   8. MEMORY_ONLY_2
+   9. MEMORY_AND_DISK_SER_2
+   10.MEMORY_ONLY_SER_2
+   
+   
+ - PySpark monitors all persist() and cache() calls that we make. It drops persisted data if not used or using a Least-Recently-Used algorithm.
+ - We can also manually remove using unpersist().
+ - unpersist() removes all blocks from memory and disk.
