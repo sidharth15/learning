@@ -153,3 +153,18 @@ Persistence and caching: https://blog.knoldus.com/understanding-persistence-in-a
  - PySpark monitors all persist() and cache() calls that we make. It drops persisted data if not used or using a Least-Recently-Used algorithm.
  - We can also manually remove using unpersist().
  - unpersist() removes all blocks from memory and disk.
+ 
+ 
+Shared variables:
+ - Shared variables are mainly used for sharing reused data across tasks/executors.
+ - There are two types:
+	1. Broadcast variables:
+		-> Broadcast to all nodes once they access it. (cached on the machines)
+		-> cannot be modified by the tasks, only look - no touch! :)
+		
+	2. Accumulator variables
+		-> used for any accumulating operations in the executors, like count/sum.
+		-> the value of accumulator variables cannot be accessed by the worker nodes (only update possible - no read access)
+		-> this allows for parallelization across worker nodes - yet to see how this works.
+		-> value can be accessed by the driver only.
+		
