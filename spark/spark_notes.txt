@@ -59,6 +59,25 @@ A sample configuration is in the github repo.
 To start the history server, run $SPARK_HOME/sbin/start-history-server.sh
 Visit <url>:18080 to see the history server UI.
 
+
+To setup master-worker:
+
+ 1. On the master instance
+	-> go to $SPARK_HOME/conf/spark-env.sh or create one from spark-env.sh.template
+	-> In this file, set the SPARK_MASTER_HOST=<ip address of the master>
+	-> go to $SPARK_HOME/sbin/ and run start-master.sh
+	-> Master UI should be available at 8080.
+	
+ 2. On the worker instances:
+	-> go to $SPARK_HOME/conf/spark-env.sh or create one from spark-env.sh.template
+	-> In this file, set the SPARK_MASTER_HOST=<ip address of the master>
+	-> go to $SPARK_HOME/sbin and run:  ./start-slave.sh spark://<ip-address-of-master>:7077
+	
+	
+ The security group of the master needs to allow inbound TCP on ports 7077, AND  - one other port - for the worker to connect to the driver.
+ This driver port needs to be configured and made to be fixed - so that we only need to open up that one port on the master sg.
+ But until we know how to do that, open up ALL INBOUND TCP traffic for the master from the worker-sg.
+
 =====================================================================================================================================================================
 
 Resilient Distributed Dataset (RDD): https://sparkbyexamples.com/pyspark-rdd/
