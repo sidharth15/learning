@@ -21,6 +21,22 @@ Standalone, Apache Mesos, Hadoop YARN (most widely used) and Kubernetes
 
 =====================================================================================================================================================================
 
+Spark Deploy modes - Client vs Cluster
+
+- Spark deployment modes specify where the driver program of the Spark application should run.
+	-> Client: 
+	   - the driver will run on the machine where we are submitting the application from. This is used for interactive and debugging purposes.
+	   - If we run it from our laptops, then the driver will run on our laptop.
+	   - if we close the terminal, then the application also stops.
+	   
+	-> Cluster:
+	   - the driver will run on one of the worker nodes and this node shows as a driver on the Spark Web UI of the application.
+	   - This can be used for production purposes.
+	   
+- To know the deployment mode of an application, we can access the history server UI and in the 'environment' tab, check for spark.submit.deployMode.
+
+=====================================================================================================================================================================
+
 Setting up Spark:
 1. Install Java
 	sudo amazon-linux-extras install java-openjdk11
@@ -73,11 +89,17 @@ To setup master-worker:
 	-> In this file, set the SPARK_MASTER_HOST=<ip address of the master>
 	-> go to $SPARK_HOME/sbin and run:  ./start-slave.sh spark://<ip-address-of-master>:7077
 	
-	
  The security group of the master needs to allow inbound TCP on ports 7077, AND  - one other port - for the worker to connect to the driver.
  This driver port needs to be configured and made to be fixed - so that we only need to open up that one port on the master sg.
  But until we know how to do that, open up ALL INBOUND TCP traffic for the master from the worker-sg.
-
+ 
+ ============================================================================================================================================================
+|| MY THEORY ON MASTER-WORKER CONNECTIVITY: The workers must be polling the master for any jobs. I make this conclusion because I didn't open the worker	||
+|| application's port in the worker-sg. Even without this, the master and worker are able to communicate. This implies that the worker initiates the traffic||
+|| to the master - and so the return traffic does not need to be specifically whitelisted on the security group.											||
+ ============================================================================================================================================================
+ 
+ 
 =====================================================================================================================================================================
 
 Resilient Distributed Dataset (RDD): https://sparkbyexamples.com/pyspark-rdd/
