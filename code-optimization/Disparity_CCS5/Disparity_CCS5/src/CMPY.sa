@@ -1,0 +1,24 @@
+;dotp_asm
+
+ 	.global	dotp2
+ 
+
+dotp2:	.cproc	ap, xp, cnt
+		.reg	ah:al, xh:xl, isuml, isumh, rsuml, rsumh
+		
+		zero	rsuml
+		zero 	rsumh
+	
+loop:	.trip	10, 10, 4               ; we'll discuss this later on
+		lddw	*ap++, ah:al
+		lddw	*xp++, xh:xl
+		dotp2	al, xl, isuml
+		dotp2	ah, xh, isumh
+		add		isuml, rsuml, rsuml
+		add		isumh, rsumh, rsumh
+		sub		cnt, 4, cnt
+ [cnt]	b  		loop
+
+ 		add 	rsuml, rsumh, rsumh
+ 		.return rsumh
+ 		.endproc

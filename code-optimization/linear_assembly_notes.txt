@@ -1,0 +1,33 @@
+Linear assembly
+===============
+
+- The source that you write for the assembly optimizer is similar to assembly source code 
+- However, linear assembly does not include information about parallel instructions, instruction latencies, or register usage.
+- The assembly optimizer takes care of the difficulties of streamlining your code by:
+	-> Finding instructions that can be executed in parallel
+	-> Handling pipeline latencies during software pipelining
+	-> Assigning register usage
+	-> Defining which unit to use
+	
+- Although you have the option with the C6000 to specify the functional unit or register used, this may restrict the compiler’s ability to fully optimize your code
+
+
+- There are three types of code for the C6000: 
+	-> C/C++ code (which is input for the C/C++ compiler), 
+	-> linear assembly code (which is input for the assembly optimizer), and 
+	-> assembly code (which is input for the assembler).
+	
+
+Optimizations in loops:
+	1. We can inform the assembly optimizerto be more aggressive about scheduling memory operations by including the .no_mdep (no memory dependencies) directive in
+	   your linear assembly function or with the −mt option when you are compiling the linear assembly file.
+	
+	2. If we need to specify dependenies between two or more memory references, used the .mdep directive. 
+	   We do this by annotating our code with memory reference symbols and adding the .mdep directive to your linear assembly function.
+	   
+	   .mdep ld1, st1
+		LDW *p1++ {ld1}, inp1 ; annotate memory reference ld1
+		; other code ...
+		STW outp2,*p2++ {st1} ; annotate memory reference st1
+		
+	  This means that the STW instruction must come after the LDW instruction.

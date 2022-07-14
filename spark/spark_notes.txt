@@ -34,6 +34,7 @@ Spark Deploy modes - Client vs Cluster
 	   - This can be used for production purposes.
 	   
 - To know the deployment mode of an application, we can access the history server UI and in the 'environment' tab, check for spark.submit.deployMode.
+- Cluster deploy mode with Standalone clusters is not supported for Python scripts.
 
 =====================================================================================================================================================================
 

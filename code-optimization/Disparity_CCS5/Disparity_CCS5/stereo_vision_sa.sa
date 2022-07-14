@@ -1,0 +1,20 @@
+             .global stereo_vision_sa
+             ; TODO: complete stereo vision function in linear assembly
+stereo_vision_sa  .cproc a_1,a_2,a_3,a_4,a_5
+
+
+
+
+
+
+
+
+
+
+
+             .return
+             .endproc
+
+
+
+

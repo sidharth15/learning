@@ -1,0 +1,16 @@
+Async programming in Python:
+===========================
+
+Blocking-code: Any code that engages or holds up the CPU is blocking code. This means that the CPU is not free to tend to other tasks during the execution of blocking-code.
+
+async and await in Python:
+	- we make use of asyncio package in Python to carry out asynchronous programming.
+	- asyncio.run(func()) runs an asynchronous function 'func()' and starts an "Event Loop".
+	- An Event Loop is like a master that oversees this asynchronous execution flow.
+	- Once the asyncio.run(func()) is called, it starts executing the func() method.
+	- When an "await" is encountered, this gives the control back to the event loop.
+	- The event loop then looks at which other tasks are present which are ready to execute, i.e., have nothing to wait on.
+	- The event loop then starts the execution of any such tasks.
+	- When this new running task finishes OR hits an await, the control goes back to the event loop - which can again look at the tasks ready to go.
+	- The important thing here is that the code at an await shouldn't be something that blocks the CPU. If it does, we can't context switch and perform another task.
+	- If it's something like an IO operation for which the CPU doesn't need to meddle, we can context-switch and the CPU can work on the new task the event loop selects.
