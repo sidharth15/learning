@@ -1,0 +1,47 @@
+Creating virtual environments
+=============================
+
+- Python can be run in a global environment, which would utilise a common directory for the entire system for storing packages.
+- A better practice is to use isolated virtual environments.
+- This can be done using venv, conda and other options.
+
+Using venv:
+
+- We first need to create a virtual environment using the command:
+
+	python -m venv <path where the virtual environment directory should be created>
+	
+E.g.,
+
+	python -m venv .myproj-venv
+	
+- This will create the directory with a whole bunch of stuff - The actual Python executables with the same version as the Python that invoked this command, scripts for activating the environment, pip executable etc.
+
+- We can then use this script to activate the environment. The script to use depends on the OS:
+
+	Linux: source .venv/bin/activate
+	
+	Windows: .venv\scripts\activate.bat
+	
+- Once activated, we should see the name of the virtual environment on the left of the terminal like so: 
+
+	(.venv) /my/working/directory
+	
+- We can then install anything needed using the command:
+
+	python -m pip install <package-name>
+	
+- To upgrade pip in this venv, we can do:
+
+	python -m pip install --upgrade pip
+	
+- Once we have the necessary packages installed, we can just create a requirements.txt file that lists out the packages included in this virtual environment.
+  So anyone else who needs to recreate the same environment can then generate it from this requirements.txt file.
+  
+  To create requirements.txt file:
+	
+	pip freeze > requirements.txt
+	
+  To create a virtual environment from this requirements.txt, after activating the environment, execute the command:
+  
+	pip install -r requirements.txt
