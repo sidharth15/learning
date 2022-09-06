@@ -73,11 +73,9 @@ E.g.,
 6. We'd need to install setuptools package for this work.
 7. Once we have this, we can install the package by running:
 	
-	.venv\scripts\python -m pip install .
 	If you add the -e flag in this command, then as soon as we make any changes in the package code, it will be updated in the installed package as well.
 	This flag is quite handy while debugging.
 	
-	OR
 	
 	.venv\scripts\python setup.py install
 	
