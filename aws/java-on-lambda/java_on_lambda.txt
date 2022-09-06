@@ -1,0 +1,14 @@
+Dagger, and other dependency injection frameworks that does it at build-time as opposed to runtime.
+
+graalvm native-image tool 
+micronaut
+quarkus
+
+https://github.com/awslabs/aws-serverless-java-container/
+https://github.com/aws-samples/serverless-java-frameworks-samples
+https://github.com/aws-samples/serverless-graalvm-demo
+https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
+https://guides.micronaut.io/latest/tag-lambda.html
+
+Better with graalvm: https://micronaut.io/launch/
+Power Tools Docs: https://awslabs.github.io/aws-lambda-powertools-java/

@@ -1,0 +1,18 @@
+Lambda cost-optimization
+
+1. Right-sizing
+	AWS Lambda power tuning: https://github.com/alexcasalboni/aws-lambda-power-tuning
+	This is a tool for finding the most cost-optimal configuration of a Lambda function.
+	This deployed a Step function state machine in the account.
+	We can specify the memory configurations for which to test the function.
+	This tool then creates multiple copies of our target lambda function to test and then checks the function duration on each copy of the function.
+	
+	https://catalog.workshops.aws/serverless-optimization/en-US
+	https://aws.amazon.com/blogs/compute/optimizing-your-aws-lambda-costs-part-1/
+	https://aws.amazon.com/blogs/compute/optimizing-your-aws-lambda-costs-part-2/
+	
+2. Don't use idle wait time in Lambda
+	- use step functions for orchestration.
+	
+3. Use direct integrations wherever possible - instead of making a Lambda do it.
+4. Event filters on Lambda 

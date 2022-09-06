@@ -1,0 +1,7 @@
+single table design vs multi-table design 
+https://aws.amazon.com/blogs/database/single-table-vs-multi-table-design-in-amazon-dynamodb/
+
+
+DynamoDB used to distribute capacity eveny across partitions. But this led to throttling even if the total capacity has not been reached.
+But now with adaptive capacity, we don't have to worry about it since Dynamo will allocate more capacity to the hot partitions.
+It also splits hot partitions into smaller partitions 
