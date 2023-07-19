@@ -1,1 +1,1 @@
-echo "this is a test remote execution command"
+<?PHP echo "this is a test remote execution command"; ?>
