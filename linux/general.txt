@@ -1,0 +1,22 @@
+General guidance:
+> Whatever the command, always try "man <command>" and you can figure it out, it's not that complicated.
+
+du
+- used for checking storage usage by directories and subdirectories
+- use --bytes to show the size of the file in bytes
+
+
+uniq
+- only works on adjacent matches
+- to find the count of occurence of a line
+
+sort
+- used to sort lines of text
+
+
+strings
+- to print human-readable strings (ASCII I'm guessing?)
+
+
+base64
+- encode/decode base64 data

@@ -1,0 +1,2 @@
+1. To know the processes listening on different ports:
+	netstat -tulpn

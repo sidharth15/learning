@@ -39,7 +39,5 @@
 	chown -R username: directory
 	
 	
-	
-	
-
-
+5. To see all sorts "events" log:
+	sudo less /var/log/secure

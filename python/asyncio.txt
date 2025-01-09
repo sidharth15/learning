@@ -1,0 +1,9 @@
+Single-Threaded Concurrency:
+
+- asyncio runs an event loop that schedules and manages the execution of multiple asynchronous tasks within a single thread.
+- Tasks yield control back to the event loop whenever they encounter an await expression. This allows other tasks to run while the current task is waiting for an I/O operation or a timeout.
+
+Non-Blocking Execution:
+
+- When an async task calls await, it signals that it is waiting for some operation to complete (e.g., sleeping, waiting for I/O). This pause allows the event loop to switch to other tasks that are ready to run.
+- This behavior ensures that the event loop keeps running efficiently without any task blocking the whole thread.
